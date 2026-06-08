@@ -1,7 +1,7 @@
 {
-  "name": "webhook-guard-bot",
-  "version": "1.0.0",
-  "description": "Discord bot that auto-deletes webhooks on mass pinging",
+  "name": "webzhook-guard",
+  "version": "2.0.0",
+  "description": "A powerful public Discord moderation & security bot",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
