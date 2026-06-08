@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guild Settings — WebzHook Guard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="settings">
+  <nav class="navbar">
+    <div class="container">
+      <h1 class="logo">⚡ WebzHook Guard</h1>
+      <div class="nav-links">
+        <a href="/dashboard" class="btn btn-secondary">← Back</a>
+        <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+      </div>
+    </div>
+  </nav>
+ 
+  <div class="container">
+    <div class="settings-header">
+      <img id="guild-icon" class="guild-icon" alt="Guild">
+      <div>
+        <h2 id="guild-name"></h2>
+        <p id="guild-status"></p>
+      </div>
+    </div>
+ 
+    <div class="settings-panel">
+      <h3>🛡️ Security & Detection Modules</h3>
+      
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="antiSpam" class="toggle">
+          <span class="toggle-label">
+            <strong>💬 Anti-Spam</strong>
+            <small>Automatically mute users sending too many messages</small>
+          </span>
+        </label>
+      </div>
+ 
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="antiRaid" class="toggle">
+          <span class="toggle-label">
+            <strong>🚨 Anti-Raid</strong>
+            <small>Lock server when multiple users join at once</small>
+          </span>
+        </label>
+      </div>
+ 
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="antiMassPing" class="toggle">
+          <span class="toggle-label">
+            <strong>👤 Anti-Mass Ping</strong>
+            <small>Block users pinging 5+ people in one message</small>
+          </span>
+        </label>
+      </div>
+ 
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="antiCaps" class="toggle">
+          <span class="toggle-label">
+            <strong>🔡 Anti-Caps</strong>
+            <small>Remove messages that are 80%+ uppercase</small>
+          </span>
+        </label>
+      </div>
+ 
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="antiDuplicate" class="toggle">
+          <span class="toggle-label">
+            <strong>🔁 Anti-Duplicate</strong>
+            <small>Warn users repeating the same message</small>
+          </span>
+        </label>
+      </div>
+ 
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="antiNuke" class="toggle">
+          <span class="toggle-label">
+            <strong>💣 Anti-Nuke</strong>
+            <small>Ban users attempting mass channel/role deletion</small>
+          </span>
+        </label>
+      </div>
+ 
+      <div class="setting-group">
+        <label class="setting-item">
+          <input type="checkbox" id="detectionEnabled" class="toggle">
+          <span class="toggle-label">
+            <strong>🎯 Detection Enabled</strong>
+            <small>Master toggle for all protection features</small>
+          </span>
+        </label>
+      </div>
+ 
+      <button id="save-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%;">💾 Save Settings</button>
+    </div>
+ 
+    <div class="settings-panel">
+      <h3>📊 Server Stats</h3>
+      <div id="stats-container">
+        <p>Loading...</p>
+      </div>
+    </div>
+ 
+    <div class="settings-panel">
+      <h3>⚡ Quick Actions</h3>
+      <button id="invite-btn" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">📩 Invite Bot</button>
+      <button id="help-btn" class="btn btn-secondary" style="width: 100%;">📖 View Commands</button>
+    </div>
+  </div>
+ 
+  <script>
+    const guildId = window.location.pathname.split('/')[2];
+    let settings = {};
+ 
+    async function loadGuildSettings() {
+      const res = await fetch(`/api/guild/${guildId}`);
+      const data = await res.json();
+      
+      document.getElementById('guild-name').textContent = data.guild.name;
+      document.getElementById('guild-icon').src = `https://cdn.discordapp.com/icons/${data.guild.id}/${data.guild.icon}.png`;
+      document.getElementById('guild-status').textContent = data.settings.enabled ? '🟢 Bot Active' : '🔴 Bot Disabled';
+      
+      settings = data.settings;
+ 
+      // Load toggles
+      document.getElementById('antiSpam').checked = settings.antiSpam;
+      document.getElementById('antiRaid').checked = settings.antiRaid;
+      document.getElementById('antiMassPing').checked = settings.antiMassPing;
+      document.getElementById('antiCaps').checked = settings.antiCaps;
+      document.getElementById('antiDuplicate').checked = settings.antiDuplicate;
+      document.getElementById('antiNuke').checked = settings.antiNuke;
+      document.getElementById('detectionEnabled').checked = settings.detectionEnabled;
+    }
+ 
+    async function saveSettings() {
+      const updates = {
+        antiSpam: document.getElementById('antiSpam').checked,
+        antiRaid: document.getElementById('antiRaid').checked,
+        antiMassPing: document.getElementById('antiMassPing').checked,
+        antiCaps: document.getElementById('antiCaps').checked,
+        antiDuplicate: document.getElementById('antiDuplicate').checked,
+        antiNuke: document.getElementById('antiNuke').checked,
+        detectionEnabled: document.getElementById('detectionEnabled').checked,
+      };
+ 
+      for (const [key, value] of Object.entries(updates)) {
+        await fetch(`/api/guild/${guildId}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value }),
+        });
+      }
+ 
+      alert('✅ Settings saved successfully!');
+    }
+ 
+    document.getElementById('save-btn').addEventListener('click', saveSettings);
+    document.getElementById('invite-btn').addEventListener('click', async () => {
+      const res = await fetch('/api/invite');
+      const data = await res.json();
+      window.open(data.inviteUrl, '_blank');
+    });
+    document.getElementById('help-btn').addEventListener('click', () => {
+      alert('Run %help in Discord to see all available commands!');
+    });
+ 
+    loadGuildSettings().catch(err => window.location.href = '/dashboard');
+  </script>
+</body>
+</html>
+ 

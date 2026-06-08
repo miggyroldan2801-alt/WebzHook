@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — WebzHook Guard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="dashboard">
+  <nav class="navbar">
+    <div class="container">
+      <h1 class="logo">⚡ WebzHook Guard</h1>
+      <div class="nav-links">
+        <span id="username"></span>
+        <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="dashboard-header">
+      <h2>🏠 My Servers</h2>
+      <p>Select a server to configure WebzHook Guard</p>
+    </div>
+
+    <div id="guilds-container" class="guilds-grid">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      const userRes = await fetch('/api/user');
+      const user = await userRes.json();
+      document.getElementById('username').textContent = `👤 ${user.username}`;
+
+      const guildsRes = await fetch('/api/guilds');
+      const guilds = await guildsRes.json();
+
+      const container = document.getElementById('guilds-container');
+      container.innerHTML = guilds.map(g => `
+        <div class="guild-card">
+          <img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png" alt="${g.name}" class="guild-icon">
+          <h3>${g.name}</h3>
+          <p>${g.owner ? '👑 Owner' : '🔧 Moderator'}</p>
+          <a href="/guild/${g.id}" class="btn btn-primary">Configure</a>
+        </div>
+      `).join('');
+    }
+
+    loadDashboard().catch(err => window.location.href = '/');
+  </script>
+</body>
+</html>
