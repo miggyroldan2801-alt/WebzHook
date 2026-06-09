@@ -6,15 +6,14 @@ module.exports = {
   MASS_PING_THRESHOLD: 5,
   BLOCK_ROLE_PINGS: true,
 
-  // Anti-spam settings
-  SPAM_MESSAGE_LIMIT: 5,       // messages
-  SPAM_TIME_WINDOW: 4000,      // ms
-  DUPLICATE_LIMIT: 4,          // same message repeated
-  CAPS_PERCENT: 80,            // % caps to trigger
-  CAPS_MIN_LENGTH: 10,         // min message length to check caps
-  MENTION_LIMIT_USER: 5,       // max mentions per message (real users)
-  RAID_JOIN_LIMIT: 10,         // joins within window = raid
-  RAID_JOIN_WINDOW: 10000,     // ms
+  SPAM_MESSAGE_LIMIT: 5,
+  SPAM_TIME_WINDOW: 4000,
+  DUPLICATE_LIMIT: 4,
+  CAPS_PERCENT: 80,
+  CAPS_MIN_LENGTH: 10,
+  MENTION_LIMIT_USER: 5,
+  RAID_JOIN_LIMIT: 10,
+  RAID_JOIN_WINDOW: 10000,
 
   COLOR: {
     RED:    0xED4245,

@@ -8,6 +8,8 @@ const { trackSpam, trackDuplicate, trackRaid } = require('./antispam');
 const handleSetup = require('./commands/setup');
 const handleModeration = require('./commands/moderation');
 const handleHelp = require('./commands/help');
+const handleUtility = require('./commands/utility');
+const handleAdvancedSecurity = require('./commands/advanced-security');
 
 const C = config.COLOR;
 
@@ -21,15 +23,13 @@ const client = new Client({
   ],
 });
 
-// ─── READY ──────────────────────────────────────────────────────────────────
 client.once('ready', () => {
   console.log(`✅ WebzHook Guard online as ${client.user.tag}`);
   client.user.setActivity('Protecting servers | %help', { type: 3 });
 });
 
-// ─── GUILD JOIN — bot starts DISABLED ───────────────────────────────────────
 client.on('guildCreate', async (guild) => {
-  db.getGuild(guild.id); // initializes with enabled: false
+  db.getGuild(guild.id);
   console.log(`📥 Joined guild: ${guild.name} (${guild.id}) — bot starts disabled.`);
 
   const ch = guild.channels.cache.find(c =>
@@ -48,14 +48,12 @@ client.on('guildCreate', async (guild) => {
   }
 });
 
-// ─── MEMBER JOIN — raid detection ────────────────────────────────────────────
 client.on('guildMemberAdd', async (member) => {
   const settings = db.getGuild(member.guild.id);
   if (!settings.enabled || !settings.detectionEnabled || !settings.antiRaid) return;
 
   const joinCount = trackRaid(member.guild.id);
   if (joinCount >= config.RAID_JOIN_LIMIT) {
-    // Lockdown all channels
     for (const [, ch] of member.guild.channels.cache) {
       if (ch.isTextBased()) {
         await ch.permissionOverwrites.edit(member.guild.roles.everyone, { SendMessages: false }).catch(() => {});
@@ -69,7 +67,6 @@ client.on('guildMemberAdd', async (member) => {
   }
 });
 
-// ─── MEMBER ROLE UPDATE — role hierarchy guard ───────────────────────────────
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
   const settings = db.getGuild(newMember.guild.id);
   if (!settings.enabled || !settings.detectionEnabled) return;
@@ -99,30 +96,32 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
   }
 });
 
-// ─── MESSAGE HANDLER ─────────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
   if (!message.guild) return;
 
   const settings = db.getGuild(message.guild.id);
 
-  // ── COMMANDS ────────────────────────────────────────────────────────────
+  // COMMANDS
   if (!message.author.bot && message.content.startsWith(config.PREFIX)) {
     const args = message.content.slice(config.PREFIX.length).trim().split(/\s+/);
     const command = args.shift().toLowerCase();
+    const member = message.member;
 
     await handleHelp(command, args, message, settings);
     await handleSetup(command, args, message, settings);
     await handleModeration(command, args, message, settings);
+    await handleUtility(command, args, message, settings);
+    await handleAdvancedSecurity(command, args, message, settings);
     return;
   }
 
-  // ── DETECTION (only if bot is enabled) ─────────────────────────────────
+  // DETECTION (only if bot is enabled)
   if (!settings.enabled || !settings.detectionEnabled) return;
   if (message.author.bot && !message.webhookId) return;
 
   const isWhitelisted = settings.whitelist.includes(message.author?.id);
 
-  // ── WEBHOOK DETECTION ───────────────────────────────────────────────────
+  // WEBHOOK DETECTION
   if (message.webhookId) {
     const mentionCount = message.mentions.users.size + message.mentions.roles.size;
     const hasEveryonePing = message.mentions.everyone;
@@ -147,11 +146,11 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // ── USER DETECTION (skip whitelisted) ───────────────────────────────────
+  // USER DETECTION (skip whitelisted)
   if (isWhitelisted) return;
   const member = message.member;
 
-  // ── USER MASS PING ──────────────────────────────────────────────────────
+  // USER MASS PING
   if (settings.antiMassPing) {
     const mentionCount = message.mentions.users.size + message.mentions.roles.size;
     const hasEveryonePing = message.mentions.everyone;
@@ -174,7 +173,7 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // ── ANTI-SPAM ───────────────────────────────────────────────────────────
+  // ANTI-SPAM
   if (settings.antiSpam) {
     const msgCount = trackSpam(message.author.id, message.guild.id);
     if (msgCount >= config.SPAM_MESSAGE_LIMIT) {
@@ -182,7 +181,7 @@ client.on('messageCreate', async (message) => {
       setTimeout(async () => {
         const muteRole = message.guild.roles.cache.find(r => r.name === config.MUTE_ROLE);
         if (muteRole) await member.roles.remove(muteRole).catch(() => {});
-      }, 30000); // auto-unmute after 30s
+      }, 30000);
       const e = new EmbedBuilder().setColor(C.ORANGE).setTitle('🔇 Spam Detected — Auto Muted')
         .addFields({ name: 'User', value: `${message.author}`, inline: true }, { name: 'Messages', value: `${msgCount} in 4s`, inline: true }, { name: 'Mute Duration', value: '30 seconds', inline: true })
         .setFooter({ text: 'WebzHook Guard' }).setTimestamp();
@@ -191,7 +190,7 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // ── ANTI-DUPLICATE ──────────────────────────────────────────────────────
+  // ANTI-DUPLICATE
   if (settings.antiDuplicate) {
     const dupCount = trackDuplicate(message.author.id, message.guild.id, message.content);
     if (dupCount >= config.DUPLICATE_LIMIT) {
@@ -205,7 +204,7 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // ── ANTI-CAPS ───────────────────────────────────────────────────────────
+  // ANTI-CAPS
   if (settings.antiCaps && message.content.length >= config.CAPS_MIN_LENGTH) {
     const upper = message.content.replace(/[^a-zA-Z]/g, '');
     if (upper.length > 0) {

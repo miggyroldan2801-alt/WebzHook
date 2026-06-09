@@ -62,7 +62,6 @@ async function applyQuarantine(member, guild) {
     color: config.COLOR.GREY,
     reason: 'WebzHook Guard - Quarantine role',
   });
-  // Deny perms in all text channels
   for (const [, ch] of guild.channels.cache) {
     if (ch.isTextBased()) {
       await ch.permissionOverwrites.edit(role, {

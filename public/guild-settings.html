@@ -16,7 +16,7 @@
       </div>
     </div>
   </nav>
- 
+
   <div class="container">
     <div class="settings-header">
       <img id="guild-icon" class="guild-icon" alt="Guild">
@@ -25,7 +25,7 @@
         <p id="guild-status"></p>
       </div>
     </div>
- 
+
     <div class="settings-panel">
       <h3>🛡️ Security & Detection Modules</h3>
       
@@ -38,7 +38,7 @@
           </span>
         </label>
       </div>
- 
+
       <div class="setting-group">
         <label class="setting-item">
           <input type="checkbox" id="antiRaid" class="toggle">
@@ -48,7 +48,7 @@
           </span>
         </label>
       </div>
- 
+
       <div class="setting-group">
         <label class="setting-item">
           <input type="checkbox" id="antiMassPing" class="toggle">
@@ -58,7 +58,7 @@
           </span>
         </label>
       </div>
- 
+
       <div class="setting-group">
         <label class="setting-item">
           <input type="checkbox" id="antiCaps" class="toggle">
@@ -68,7 +68,7 @@
           </span>
         </label>
       </div>
- 
+
       <div class="setting-group">
         <label class="setting-item">
           <input type="checkbox" id="antiDuplicate" class="toggle">
@@ -78,7 +78,7 @@
           </span>
         </label>
       </div>
- 
+
       <div class="setting-group">
         <label class="setting-item">
           <input type="checkbox" id="antiNuke" class="toggle">
@@ -88,7 +88,7 @@
           </span>
         </label>
       </div>
- 
+
       <div class="setting-group">
         <label class="setting-item">
           <input type="checkbox" id="detectionEnabled" class="toggle">
@@ -98,28 +98,28 @@
           </span>
         </label>
       </div>
- 
+
       <button id="save-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%;">💾 Save Settings</button>
     </div>
- 
+
     <div class="settings-panel">
       <h3>📊 Server Stats</h3>
       <div id="stats-container">
         <p>Loading...</p>
       </div>
     </div>
- 
+
     <div class="settings-panel">
       <h3>⚡ Quick Actions</h3>
       <button id="invite-btn" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">📩 Invite Bot</button>
       <button id="help-btn" class="btn btn-secondary" style="width: 100%;">📖 View Commands</button>
     </div>
   </div>
- 
+
   <script>
     const guildId = window.location.pathname.split('/')[2];
     let settings = {};
- 
+
     async function loadGuildSettings() {
       const res = await fetch(`/api/guild/${guildId}`);
       const data = await res.json();
@@ -129,8 +129,7 @@
       document.getElementById('guild-status').textContent = data.settings.enabled ? '🟢 Bot Active' : '🔴 Bot Disabled';
       
       settings = data.settings;
- 
-      // Load toggles
+
       document.getElementById('antiSpam').checked = settings.antiSpam;
       document.getElementById('antiRaid').checked = settings.antiRaid;
       document.getElementById('antiMassPing').checked = settings.antiMassPing;
@@ -139,7 +138,7 @@
       document.getElementById('antiNuke').checked = settings.antiNuke;
       document.getElementById('detectionEnabled').checked = settings.detectionEnabled;
     }
- 
+
     async function saveSettings() {
       const updates = {
         antiSpam: document.getElementById('antiSpam').checked,
@@ -150,7 +149,7 @@
         antiNuke: document.getElementById('antiNuke').checked,
         detectionEnabled: document.getElementById('detectionEnabled').checked,
       };
- 
+
       for (const [key, value] of Object.entries(updates)) {
         await fetch(`/api/guild/${guildId}/settings`, {
           method: 'POST',
@@ -158,10 +157,10 @@
           body: JSON.stringify({ key, value }),
         });
       }
- 
+
       alert('✅ Settings saved successfully!');
     }
- 
+
     document.getElementById('save-btn').addEventListener('click', saveSettings);
     document.getElementById('invite-btn').addEventListener('click', async () => {
       const res = await fetch('/api/invite');
@@ -171,9 +170,8 @@
     document.getElementById('help-btn').addEventListener('click', () => {
       alert('Run %help in Discord to see all available commands!');
     });
- 
-    loadGuildSettings().catch(err => window.location.href = '/dashboard');
+
+    window.addEventListener('load', () => loadGuildSettings().catch(err => window.location.href = '/dashboard'));
   </script>
 </body>
 </html>
- 

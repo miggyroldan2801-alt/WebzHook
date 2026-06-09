@@ -14,7 +14,7 @@ function usage(text) {
 module.exports = async function handleModeration(command, args, message, settings) {
   const { guild, member, channel } = message;
 
-  // ── %kick @user [reason] ─────────────────────────────────────────────────
+  // %kick @user [reason]
   if (command === 'kick') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -29,7 +29,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %ban @user [reason] ──────────────────────────────────────────────────
+  // %ban @user [reason]
   if (command === 'ban') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -44,7 +44,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %tempban @user <duration> [reason] ───────────────────────────────────
+  // %tempban @user <duration> [reason]
   if (command === 'tempban') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -64,7 +64,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %unban <userId> ──────────────────────────────────────────────────────
+  // %unban <userId>
   if (command === 'unban') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const userId = args[0];
@@ -77,7 +77,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %mute @user [duration] [reason] ─────────────────────────────────────
+  // %mute @user [duration] [reason]
   if (command === 'mute') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -96,7 +96,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %unmute @user ────────────────────────────────────────────────────────
+  // %unmute @user
   if (command === 'unmute') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -110,7 +110,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %warn @user <reason> ─────────────────────────────────────────────────
+  // %warn @user <reason>
   if (command === 'warn') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -122,12 +122,11 @@ module.exports = async function handleModeration(command, args, message, setting
       .setThumbnail(target.user.displayAvatarURL()).setFooter({ text: 'WebzHook Guard' }).setTimestamp();
     await message.reply({ embeds: [e] });
     await sendLog(guild, e);
-    // Auto-action on warn threshold
     if (warns.length >= 3 && warns.length < 5) await applyMute(target, guild);
     if (warns.length >= 5) await target.ban({ reason: 'Auto-ban: 5+ warnings' }).catch(() => {});
   }
 
-  // ── %warnings @user ──────────────────────────────────────────────────────
+  // %warnings @user
   if (command === 'warnings') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -139,7 +138,7 @@ module.exports = async function handleModeration(command, args, message, setting
       .setThumbnail(target.user.displayAvatarURL()).setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %clearwarns @user ────────────────────────────────────────────────────
+  // %clearwarns @user
   if (command === 'clearwarns') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -152,7 +151,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %quarantine @user ────────────────────────────────────────────────────
+  // %quarantine @user
   if (command === 'quarantine') {
     if (!isOwner(member) && !hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -165,7 +164,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %unquarantine @user ──────────────────────────────────────────────────
+  // %unquarantine @user
   if (command === 'unquarantine') {
     if (!isOwner(member) && !hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -179,7 +178,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %purge <amount> ──────────────────────────────────────────────────────
+  // %purge <amount>
   if (command === 'purge') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const amount = parseInt(args[0]);
@@ -193,7 +192,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %slowmode <seconds> ──────────────────────────────────────────────────
+  // %slowmode <seconds>
   if (command === 'slowmode') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const secs = parseInt(args[0]);
@@ -207,7 +206,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %lock [reason] ───────────────────────────────────────────────────────
+  // %lock [reason]
   if (command === 'lock') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const reason = args.join(' ') || 'No reason provided';
@@ -219,7 +218,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %unlock ──────────────────────────────────────────────────────────────
+  // %unlock
   if (command === 'unlock') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     await channel.permissionOverwrites.edit(guild.roles.everyone, { SendMessages: null });
@@ -230,7 +229,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %lockdown [reason] ───────────────────────────────────────────────────
+  // %lockdown [reason]
   if (command === 'lockdown') {
     if (!isOwner(member) && !hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const reason = args.join(' ') || 'Emergency lockdown';
@@ -249,7 +248,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %unlockdown ──────────────────────────────────────────────────────────
+  // %unlockdown
   if (command === 'unlockdown') {
     if (!isOwner(member) && !hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     for (const [, ch] of guild.channels.cache) {
@@ -264,7 +263,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %nick @user <nickname> ───────────────────────────────────────────────
+  // %nick @user <nickname>
   if (command === 'nick') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const target = message.mentions.members.first();
@@ -276,7 +275,7 @@ module.exports = async function handleModeration(command, args, message, setting
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %userinfo @user ──────────────────────────────────────────────────────
+  // %userinfo @user
   if (command === 'userinfo') {
     const target = message.mentions.members.first() || member;
     const roles = target.roles.cache.filter(r => r.name !== '@everyone').map(r => `${r}`).join(', ') || 'None';
@@ -292,7 +291,7 @@ module.exports = async function handleModeration(command, args, message, setting
       ).setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %serverinfo ──────────────────────────────────────────────────────────
+  // %serverinfo
   if (command === 'serverinfo') {
     await message.reply({ embeds: [new EmbedBuilder().setColor(C.BLUE).setTitle(`🏠 Server Info — ${guild.name}`)
       .setThumbnail(guild.iconURL())
@@ -306,7 +305,7 @@ module.exports = async function handleModeration(command, args, message, setting
       ).setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %roleinfo @role ──────────────────────────────────────────────────────
+  // %roleinfo @role
   if (command === 'roleinfo') {
     const role = message.mentions.roles.first();
     if (!role) return message.reply({ embeds: [usage('`%roleinfo @Role`')] });
@@ -321,7 +320,7 @@ module.exports = async function handleModeration(command, args, message, setting
       ).setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %whitelist @user ... ─────────────────────────────────────────────────
+  // %whitelist @user ...
   if (command === 'whitelist') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const mentioned = message.mentions.users;
@@ -334,7 +333,7 @@ module.exports = async function handleModeration(command, args, message, setting
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %unwhitelist @user ───────────────────────────────────────────────────
+  // %unwhitelist @user
   if (command === 'unwhitelist') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const mentioned = message.mentions.users;
@@ -346,7 +345,7 @@ module.exports = async function handleModeration(command, args, message, setting
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %whitelistview ───────────────────────────────────────────────────────
+  // %whitelistview
   if (command === 'whitelistview') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const wl = settings.whitelist.length ? settings.whitelist.map(id => `<@${id}>`).join(', ') : 'No users whitelisted.';
@@ -354,7 +353,7 @@ module.exports = async function handleModeration(command, args, message, setting
       .setDescription(wl).setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %disable-bot <duration> ──────────────────────────────────────────────
+  // %disable-bot <duration>
   if (command === 'disable-bot') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     const ms = parseDuration(args[0] || '');
@@ -369,7 +368,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %enable-bot ──────────────────────────────────────────────────────────
+  // %enable-bot
   if (command === 'enable-bot') {
     if (!hasBotAccess(member)) return message.reply({ embeds: [noPerms()] });
     updateGuild(guild.id, { detectionEnabled: true });
@@ -380,7 +379,7 @@ module.exports = async function handleModeration(command, args, message, setting
     await sendLog(guild, e);
   }
 
-  // ── %status ──────────────────────────────────────────────────────────────
+  // %status
   if (command === 'status') {
     const wl = settings.whitelist.length ? settings.whitelist.map(id => `<@${id}>`).join(', ') : 'None';
     const forbidden = settings.forbiddenRoles.length ? settings.forbiddenRoles.map(id => `<@&${id}>`).join(', ') : 'None';

@@ -2,7 +2,7 @@
   "name": "webzhook-guard",
   "version": "2.0.0",
   "description": "A powerful public Discord moderation & security bot with web dashboard",
-  "main": "bot.js",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },

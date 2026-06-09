@@ -7,7 +7,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
   const { guild, member, channel } = message;
   const C = config.COLOR;
 
-  // ── %setup ───────────────────────────────────────────────────────────────
+  // %setup
   if (command === 'setup') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
 
@@ -18,7 +18,6 @@ module.exports = async function handleSetup(command, args, message, settings) {
 
     const results = [];
 
-    // Create roles
     try {
       await getOrCreateRole(guild, config.BOT_ACCESS_ROLE, { color: C.BLUE, reason: 'WebzHook Guard setup' });
       results.push('✅ `Bot Manager` role created');
@@ -40,7 +39,6 @@ module.exports = async function handleSetup(command, args, message, settings) {
       results.push('✅ `Muted` role created & configured');
     } catch { results.push('❌ Failed to create `Muted` role'); }
 
-    // Create log channel
     try {
       let logCh = guild.channels.cache.find(c => c.name === 'webzhook-logs');
       if (!logCh) {
@@ -65,7 +63,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %enable ──────────────────────────────────────────────────────────────
+  // %enable
   if (command === 'enable') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     updateGuild(guild.id, { enabled: true, detectionEnabled: true });
@@ -75,7 +73,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %disable ─────────────────────────────────────────────────────────────
+  // %disable
   if (command === 'disable') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     updateGuild(guild.id, { enabled: false, detectionEnabled: false });
@@ -85,7 +83,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %setlog #channel ─────────────────────────────────────────────────────
+  // %setlog #channel
   if (command === 'setlog') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     const ch = message.mentions.channels.first();
@@ -97,7 +95,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %setmaxrole <position> ───────────────────────────────────────────────
+  // %setmaxrole <position>
   if (command === 'setmaxrole') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     const pos = parseInt(args[0]);
@@ -109,7 +107,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %forbiddenrole @role ─────────────────────────────────────────────────
+  // %forbiddenrole @role
   if (command === 'forbiddenrole') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     const role = message.mentions.roles.first();
@@ -123,7 +121,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %unforbiddenrole @role ───────────────────────────────────────────────
+  // %unforbiddenrole @role
   if (command === 'unforbiddenrole') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     const role = message.mentions.roles.first();
@@ -136,7 +134,7 @@ module.exports = async function handleSetup(command, args, message, settings) {
       .setFooter({ text: 'WebzHook Guard' }).setTimestamp()] });
   }
 
-  // ── %toggle <feature> ────────────────────────────────────────────────────
+  // %toggle <feature>
   if (command === 'toggle') {
     if (!isOwner(member)) return message.reply({ embeds: [noPerms()] });
     const features = { antispam: 'antiSpam', antiraid: 'antiRaid', antiping: 'antiMassPing', anticaps: 'antiCaps', antiduplicate: 'antiDuplicate' };

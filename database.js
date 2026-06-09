@@ -20,20 +20,24 @@ function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// ── Guild settings ──────────────────────────────────────────────────────────
 const DEFAULT_GUILD = {
-  enabled: false,           // bot starts DISABLED when invited
+  enabled: false,
   detectionEnabled: false,
   logChannelId: null,
-  whitelist: [],            // user IDs exempt from detection
-  maxRolePosition: null,    // null = no limit
-  forbiddenRoles: [],       // role IDs that can't be assigned
+  whitelist: [],
+  maxRolePosition: null,
+  forbiddenRoles: [],
   antiRaid: true,
   antiSpam: true,
   antiMassPing: true,
   antiCaps: true,
   antiDuplicate: true,
+  antiNuke: true,
   setupDone: false,
+  customCommands: [],
+  verifyChannelId: null,
+  verifiedRoleId: null,
+  verifyMode: 'button',
 };
 
 function getGuild(guildId) {
@@ -57,7 +61,6 @@ function updateGuild(guildId, patch) {
   return settings;
 }
 
-// ── Warns ───────────────────────────────────────────────────────────────────
 function getWarns(guildId, userId) {
   ensureFiles();
   const data = readJSON(WARNS_FILE);

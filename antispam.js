@@ -1,7 +1,6 @@
-// ─── In-memory spam tracking ────────────────────────────────────────────────
-const spamMap = new Map();      // userId -> [timestamps]
-const duplicateMap = new Map(); // userId -> { content, count }
-const raidMap = new Map();      // guildId -> [timestamps]
+const spamMap = new Map();
+const duplicateMap = new Map();
+const raidMap = new Map();
 
 function trackSpam(userId, guildId) {
   const key = `${guildId}:${userId}`;

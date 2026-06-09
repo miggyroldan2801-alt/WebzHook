@@ -6,49 +6,207 @@
   <title>Dashboard — WebzHook Guard</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="dashboard">
+<body>
   <nav class="navbar">
     <div class="container">
       <h1 class="logo">⚡ WebzHook Guard</h1>
       <div class="nav-links">
-        <span id="username"></span>
+        <div class="user-info">
+          <img id="user-avatar" class="user-avatar" alt="You">
+          <span id="username"></span>
+        </div>
         <a href="/auth/logout" class="btn btn-secondary">Logout</a>
       </div>
     </div>
   </nav>
 
-  <div class="container">
-    <div class="dashboard-header">
-      <h2>🏠 My Servers</h2>
-      <p>Select a server to configure WebzHook Guard</p>
+  <div class="container dashboard-container">
+    <div class="sidebar">
+      <h3>📂 Navigation</h3>
+      <div class="sidebar-item active" onclick="showTab('servers')">My Servers</div>
+      <div class="sidebar-item" onclick="showTab('commands')">Custom Commands</div>
+      <div class="sidebar-item" onclick="showTab('help')">Help & Docs</div>
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid rgba(88, 101, 242, 0.2);">
+      <a href="https://discord.gg/webzhook" style="color: #5865f2; text-decoration: none; display: block; padding: 10px 0;">💬 Support Server</a>
     </div>
 
-    <div id="guilds-container" class="guilds-grid">
-      <!-- Dynamically populated -->
+    <div class="main-content">
+      <!-- Servers Tab -->
+      <div id="servers-tab" class="tab-content active">
+        <h2>🏠 My Servers</h2>
+        <p style="color: #a0a0c0; margin-bottom: 30px;">Select a server to manage WebzHook Guard settings</p>
+        <div id="guilds-container" class="guilds-grid">
+          <div style="grid-column: 1/-1; text-align: center; color: #a0a0c0; padding: 40px;">
+            Loading your servers...
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Commands Tab -->
+      <div id="commands-tab" class="tab-content">
+        <h2>⚙️ Global Custom Commands</h2>
+        <p style="color: #a0a0c0; margin-bottom: 30px;">Create commands that work across all your servers</p>
+        <button class="btn btn-primary" onclick="openCommandModal()">+ Create Command</button>
+        <div id="custom-commands-list" class="command-list" style="margin-top: 30px;"></div>
+      </div>
+
+      <!-- Help Tab -->
+      <div id="help-tab" class="tab-content">
+        <h2>📖 Help & Documentation</h2>
+        <p style="color: #a0a0c0; margin-bottom: 30px;">Learn about WebzHook Guard features and commands</p>
+        <div style="background: rgba(26, 26, 58, 0.5); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 10px; padding: 25px;">
+          <h3 style="margin-bottom: 15px;">Getting Started</h3>
+          <p>1. Select a server from the left panel<br>
+          2. Configure modules (anti-spam, anti-raid, etc)<br>
+          3. Create custom commands as needed<br>
+          4. Check the logs for action history</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid rgba(88, 101, 242, 0.2);">
+          <h3 style="margin: 20px 0 15px;">Command Prefix</h3>
+          <p>Default prefix: <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">%</code></p>
+          <p style="margin-top: 20px;">Run <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">%help</code> in Discord for full command list</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Modal -->
+  <div id="command-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeCommandModal()">&times;</button>
+      <h2>➕ Create Custom Command</h2>
+      <form onsubmit="saveCustomCommand(event)">
+        <div class="form-group">
+          <label>Command Name</label>
+          <input type="text" id="cmd-name" placeholder="mycommand" required>
+        </div>
+        <div class="form-group">
+          <label>Response</label>
+          <textarea id="cmd-response" placeholder="Command response text" rows="6" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Trigger Words (comma-separated, optional)</label>
+          <input type="text" id="cmd-triggers" placeholder="keyword1, keyword2">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create Command</button>
+      </form>
     </div>
   </div>
 
   <script>
-    async function loadDashboard() {
-      const userRes = await fetch('/api/user');
-      const user = await userRes.json();
-      document.getElementById('username').textContent = `👤 ${user.username}`;
-
-      const guildsRes = await fetch('/api/guilds');
-      const guilds = await guildsRes.json();
-
-      const container = document.getElementById('guilds-container');
-      container.innerHTML = guilds.map(g => `
-        <div class="guild-card">
-          <img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png" alt="${g.name}" class="guild-icon">
-          <h3>${g.name}</h3>
-          <p>${g.owner ? '👑 Owner' : '🔧 Moderator'}</p>
-          <a href="/guild/${g.id}" class="btn btn-primary">Configure</a>
-        </div>
-      `).join('');
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      
+      document.getElementById(tabName + '-tab').classList.add('active');
+      event.target.classList.add('active');
     }
 
-    loadDashboard().catch(err => window.location.href = '/');
+    function openCommandModal() {
+      document.getElementById('command-modal').classList.add('active');
+    }
+
+    function closeCommandModal() {
+      document.getElementById('command-modal').classList.remove('active');
+    }
+
+    async function saveCustomCommand(e) {
+      e.preventDefault();
+      const cmd = {
+        name: document.getElementById('cmd-name').value,
+        response: document.getElementById('cmd-response').value,
+        triggers: document.getElementById('cmd-triggers').value.split(',').map(t => t.trim()).filter(t => t)
+      };
+      
+      try {
+        const res = await fetch('/api/custom-commands', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cmd)
+        });
+        
+        if (res.ok) {
+          alert('✅ Command created!');
+          closeCommandModal();
+          loadCustomCommands();
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadDashboard() {
+      try {
+        const userRes = await fetch('/api/user');
+        if (!userRes.ok) return window.location.href = '/';
+        
+        const user = await userRes.json();
+        document.getElementById('username').textContent = user.username;
+        document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+
+        const guildsRes = await fetch('/api/guilds');
+        const guilds = await guildsRes.json();
+
+        const container = document.getElementById('guilds-container');
+        container.innerHTML = guilds.map(g => `
+          <div class="guild-card">
+            <img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon || '0'}.png?size=256" alt="${g.name}" class="guild-icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%235865f2%22 width=%22100%22 height=%22100%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22white%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22>${g.name[0]}</text></svg>'">
+            <div class="guild-name">${g.name}</div>
+            <div class="guild-meta">${g.owner ? '👑 Owner' : '🔧 Admin'}</div>
+            <a href="/guild/${g.id}" class="btn btn-primary btn-block">Manage</a>
+          </div>
+        `).join('');
+
+        if (guilds.length === 0) {
+          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #a0a0c0;">No servers found. <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot&permissions=8" style="color: #5865f2;">Invite the bot</a> to get started.</div>';
+        }
+
+        loadCustomCommands();
+      } catch (err) {
+        console.error(err);
+        window.location.href = '/';
+      }
+    }
+
+    async function loadCustomCommands() {
+      try {
+        const res = await fetch('/api/custom-commands');
+        const commands = await res.json();
+        const list = document.getElementById('custom-commands-list');
+        
+        if (commands.length === 0) {
+          list.innerHTML = '<p style="color: #a0a0c0;">No custom commands yet. Create one to get started!</p>';
+          return;
+        }
+
+        list.innerHTML = commands.map(cmd => `
+          <div class="command-item">
+            <div>
+              <div class="command-name">%${cmd.name}</div>
+              <div class="command-desc">${cmd.response.substring(0, 80)}...</div>
+            </div>
+            <button class="btn btn-small btn-dark" onclick="deleteCommand('${cmd.name}')">Delete</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteCommand(name) {
+      if (!confirm(`Delete command "${name}"?`)) return;
+      
+      try {
+        const res = await fetch(`/api/custom-commands/${name}`, { method: 'DELETE' });
+        if (res.ok) {
+          alert('✅ Command deleted');
+          loadCustomCommands();
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    window.addEventListener('load', loadDashboard);
   </script>
 </body>
 </html>
