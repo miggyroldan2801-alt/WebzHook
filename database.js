@@ -35,15 +35,31 @@ const DEFAULT_GUILD = {
   antiNuke: true,
   setupDone: false,
   customCommands: [],
+  funCommands: [],
+  responses: {},
   verifyChannelId: null,
   verifiedRoleId: null,
   verifyMode: 'button',
+  prefix: '%',
+  modules: {
+    antiSpam: true,
+    antiRaid: true,
+    antiMassPing: true,
+    antiCaps: true,
+    antiDuplicate: true,
+    antiNuke: true,
+    antiLogger: false,
+    webhookMonitor: false,
+    inviteFilter: false,
+  }
 };
 
 function getGuild(guildId) {
   ensureFiles();
   const data = readJSON(GUILDS_FILE);
   if (!data[guildId]) data[guildId] = { ...DEFAULT_GUILD };
+  // Merge missing keys from DEFAULT_GUILD
+  data[guildId] = { ...DEFAULT_GUILD, ...data[guildId] };
   return data[guildId];
 }
 

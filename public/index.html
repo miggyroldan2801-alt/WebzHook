@@ -3,169 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="WebzHook Guard - Professional Discord Bot for Security & Moderation">
-  <title>WebzHook Guard - Secure Your Discord Server</title>
+  <title>WebzHook Guard - Secure Discord Bot</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="landing">
+<body>
   <nav class="navbar">
     <div class="container">
       <h1 class="logo">⚡ WebzHook Guard</h1>
       <div class="nav-links">
         <a href="#features">Features</a>
-        <a href="#commands">Commands</a>
-        <a href="/auth/login" class="btn btn-primary">Dashboard</a>
+        <a href="/auth/login" class="btn btn-primary">Get Started</a>
       </div>
     </div>
   </nav>
 
   <section class="hero">
     <div class="hero-content">
-      <h1>Secure Your Discord Community</h1>
-      <p>Professional moderation, anti-raid, anti-nuke protection, and 75+ commands for complete server security.</p>
+      <h1>Secure Your Discord Server</h1>
+      <p>Advanced moderation, anti-raid protection, and intelligent automation. All from a beautiful, intuitive dashboard.</p>
       
       <div class="hero-buttons">
-        <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot&permissions=8" class="btn btn-large btn-primary">📩 Invite Bot</a>
-        <a href="/auth/login" class="btn btn-large btn-secondary">🔐 Dashboard</a>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-number">75+</div>
-          <div class="stat-label">Commands</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">6</div>
-          <div class="stat-label">Detection Modules</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">100%</div>
-          <div class="stat-label">Customizable</div>
-        </div>
+        <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot&permissions=8" class="btn btn-primary">📩 Invite Bot</a>
+        <a href="/auth/login" class="btn btn-secondary">🔐 Dashboard</a>
       </div>
     </div>
   </section>
 
-  <section id="features" class="features">
+  <section id="features" style="padding: 80px 0; text-align: center;">
     <div class="container">
-      <h2 class="section-title">Powerful Features</h2>
+      <h2 class="section-title">Everything You Need</h2>
+      <p class="section-subtitle">All features at your fingertips</p>
       
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🔨</div>
-          <h3>Advanced Moderation</h3>
-          <p>Ban, kick, mute, warn with auto-actions. Customizable warnings system with auto-mute at 3 warnings and auto-ban at 5.</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px;">
+        <div style="padding: 32px; background: rgba(26, 26, 58, 0.6); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 16px;">
+          <div style="font-size: 40px; margin-bottom: 16px;">🛡️</div>
+          <h3 style="margin-bottom: 12px; color: #e0e0e0;">Smart Protection</h3>
+          <p style="color: #a0a0c0;">Auto-detect and block raids, spam, and abuse</p>
         </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🚨</div>
-          <h3>Anti-Raid Protection</h3>
-          <p>Automatic raid detection with instant server lockdown when mass joins detected. Protect your community 24/7.</p>
+        <div style="padding: 32px; background: rgba(26, 26, 58, 0.6); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 16px;">
+          <div style="font-size: 40px; margin-bottom: 16px;">📊</div>
+          <h3 style="margin-bottom: 12px; color: #e0e0e0;">Beautiful Dashboard</h3>
+          <p style="color: #a0a0c0;">Control everything from one elegant interface</p>
         </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">💣</div>
-          <h3>Anti-Nuke System</h3>
-          <p>Prevent mass channel/role deletion. Auto-ban users attempting server nukes. Role hierarchy protection.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🔐</div>
-          <h3>Verification System</h3>
-          <p>Button-based and captcha verification. Keep bots and raiders out with intelligent gate-keeping.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <h3>Anti-Spam Engine</h3>
-          <p>Multi-layer spam detection: mass pings, duplicates, caps lock abuse. Smart auto-mute system.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>Professional Dashboard</h3>
-          <p>Control everything from a sleek web interface. Per-server settings, module toggles, custom commands builder.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">⚙️</div>
-          <h3>Custom Commands</h3>
-          <p>Create your own commands without coding. Full customization with response templates and triggers.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📜</div>
-          <h3>Full Audit Logs</h3>
-          <p>Complete action history. See who did what, when, and why. Full moderation transparency.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🛡️</div>
-          <h3>Security First</h3>
-          <p>Enterprise-grade protection. Role hierarchy guards, forbidden role lists, max position limits.</p>
+        <div style="padding: 32px; background: rgba(26, 26, 58, 0.6); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 16px;">
+          <div style="font-size: 40px; margin-bottom: 16px;">⚙️</div>
+          <h3 style="margin-bottom: 12px; color: #e0e0e0;">Custom Commands</h3>
+          <p style="color: #a0a0c0;">Create custom commands with code or presets</p>
         </div>
       </div>
     </div>
   </section>
-
-  <section id="commands" class="features">
-    <div class="container">
-      <h2 class="section-title">75+ Commands</h2>
-      
-      <div class="feature-grid">
-        <div class="feature-card">
-          <h3>🔨 Moderation (20)</h3>
-          <p>ban, kick, mute, warn, purge, slowmode, lock, lockdown, nick, tempban, unban, unmute, clearwarns, quarantine, and more</p>
-        </div>
-
-        <div class="feature-card">
-          <h3>⚡ Utility (15)</h3>
-          <p>userinfo, serverinfo, roleinfo, status, help, setup, enable, disable, setlog, toggle, whitelist, and more</p>
-        </div>
-
-        <div class="feature-card">
-          <h3>🛡️ Security (20)</h3>
-          <p>antiraid, antinuke, antispam, antidup, anticaps, antoping, quarantine, verify, setmaxrole, forbiddenrole, and more</p>
-        </div>
-
-        <div class="feature-card">
-          <h3>📊 Information (10)</h3>
-          <p>warnings, logs, members, channels, roles, permissions, security-status, server-stats, audit, history</p>
-        </div>
-
-        <div class="feature-card">
-          <h3>⚙️ Configuration (10)</h3>
-          <p>settings, config, modules, permissions, access, whitelist, blacklist, protection, modes, custom-commands</p>
-        </div>
-
-        <div class="feature-card">
-          <h3>🚀 Advanced (5+)</h3>
-          <p>Custom command builder, mass actions, automation, integrations, webhooks, triggers, reactions</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <footer>
-    <p><strong>⚡ WebzHook Guard</strong> — Enterprise Discord Security</p>
-    <p>Trusted by thousands of communities worldwide</p>
-    <div class="footer-links">
-      <a href="/auth/login">Dashboard</a>
-      <a href="#features">Features</a>
-      <a href="#">Support</a>
-      <a href="#">Documentation</a>
-      <a href="#">Privacy</a>
-    </div>
-  </footer>
 
   <script>
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth' });
-      });
-    });
+    // Check if user is logged in
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          window.location.href = '/dashboard';
+        }
+      } catch (err) {
+        // Not logged in, stay on landing page
+      }
+    }
+    
+    checkAuth();
   </script>
 </body>
 </html>
