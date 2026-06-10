@@ -3,8 +3,7 @@ const express = require('express');
 const path = require('path');
 const axios = require('axios');
 const session = require('express-session');
-const db = require('./database');
-const config = require('./config');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +11,52 @@ const PORT = process.env.PORT || 3000;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'http://localhost:3000/auth/callback';
+
+// ━━━ INLINE EMBEDDED DATABASE SYSTEM ━━━
+const DB_FILE = path.join(__dirname, 'database.json');
+let localDatabase = {};
+
+function loadDatabase() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      localDatabase = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    }
+  } catch (err) {
+    console.error('⚠️ Error reading database.json storage file:', err);
+  }
+}
+
+function saveDatabase() {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(localDatabase, null, 2));
+  } catch (err) {
+    console.error('⚠️ Error writing to database.json storage file:', err);
+  }
+}
+
+function getGuildSettings(guildId) {
+  loadDatabase();
+  if (!localDatabase[guildId]) {
+    localDatabase[guildId] = {
+      enabled: true,
+      detectionEnabled: true,
+      modules: { antiSpam: false, antiRaid: false, antiMassPing: false, antiCaps: false, antiDuplicate: false, antiNuke: false },
+      customCommands: [],
+      funCommands: [],
+      responses: {}
+    };
+    saveDatabase();
+  }
+  return localDatabase[guildId];
+}
+
+function saveGuildSettings(guildId, settings) {
+  localDatabase[guildId] = settings;
+  saveDatabase();
+}
+
+// Initial Database Initialization Check
+loadDatabase();
 
 // MIDDLEWARE
 app.use(express.json({ limit: '50mb' }));
@@ -78,7 +123,6 @@ app.get('/auth/logout', (req, res) => {
 });
 
 // ━━━ USER & GUILD API ━━━
-
 app.get('/api/user', ensureAuth, (req, res) => {
   res.json(req.session.user);
 });
@@ -90,7 +134,7 @@ app.get('/api/guilds', ensureAuth, (req, res) => {
     name: g.name,
     icon: g.icon,
     owner: g.owner,
-    settings: db.getGuild(g.id),
+    settings: getGuildSettings(g.id),
   }));
   res.json(enriched);
 });
@@ -98,16 +142,15 @@ app.get('/api/guilds', ensureAuth, (req, res) => {
 app.get('/api/guild/:guildId', ensureAuth, (req, res) => {
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild) return res.status(403).json({ error: 'Access denied' });
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   res.json({ guild, settings });
 });
 
 // ━━━ MODULES API ━━━
-
 app.get('/api/guild/:guildId/modules', ensureAuth, (req, res) => {
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild) return res.status(403).json({ error: 'Access denied' });
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   res.json({
     modules: settings.modules,
     detectionEnabled: settings.detectionEnabled,
@@ -120,10 +163,10 @@ app.post('/api/guild/:guildId/module/:moduleName', ensureAuth, (req, res) => {
   if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
 
   const { value } = req.body;
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   if (settings.modules.hasOwnProperty(req.params.moduleName)) {
     settings.modules[req.params.moduleName] = value;
-    db.saveGuild(req.params.guildId, settings);
+    saveGuildSettings(req.params.guildId, settings);
     res.json({ success: true, modules: settings.modules });
   } else {
     res.status(400).json({ error: 'Invalid module' });
@@ -131,11 +174,10 @@ app.post('/api/guild/:guildId/module/:moduleName', ensureAuth, (req, res) => {
 });
 
 // ━━━ CUSTOM COMMANDS API ━━━
-
 app.get('/api/guild/:guildId/custom-commands', ensureAuth, (req, res) => {
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild) return res.status(403).json({ error: 'Access denied' });
-  const commands = db.getGuild(req.params.guildId).customCommands || [];
+  const commands = getGuildSettings(req.params.guildId).customCommands || [];
   res.json(commands);
 });
 
@@ -146,7 +188,7 @@ app.post('/api/guild/:guildId/custom-commands', ensureAuth, (req, res) => {
   const { name, code, description } = req.body;
   if (!name || !code) return res.status(400).json({ error: 'Missing fields' });
 
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   if (!settings.customCommands) settings.customCommands = [];
   
   const command = {
@@ -159,7 +201,7 @@ app.post('/api/guild/:guildId/custom-commands', ensureAuth, (req, res) => {
   };
   
   settings.customCommands.push(command);
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true, command });
 });
 
@@ -168,7 +210,7 @@ app.put('/api/guild/:guildId/custom-commands/:commandId', ensureAuth, (req, res)
   if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
 
   const { code, description, enabled } = req.body;
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   const cmd = settings.customCommands.find(c => c.id === req.params.commandId);
   
   if (!cmd) return res.status(404).json({ error: 'Command not found' });
@@ -177,7 +219,7 @@ app.put('/api/guild/:guildId/custom-commands/:commandId', ensureAuth, (req, res)
   if (description !== undefined) cmd.description = description;
   if (enabled !== undefined) cmd.enabled = enabled;
   
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true, command: cmd });
 });
 
@@ -185,18 +227,17 @@ app.delete('/api/guild/:guildId/custom-commands/:commandId', ensureAuth, (req, r
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
 
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   settings.customCommands = settings.customCommands.filter(c => c.id !== req.params.commandId);
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true });
 });
 
 // ━━━ FUN COMMANDS API ━━━
-
 app.get('/api/guild/:guildId/fun-commands', ensureAuth, (req, res) => {
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild) return res.status(403).json({ error: 'Access denied' });
-  const commands = db.getGuild(req.params.guildId).funCommands || [];
+  const commands = getGuildSettings(req.params.guildId).funCommands || [];
   res.json(commands);
 });
 
@@ -207,7 +248,7 @@ app.post('/api/guild/:guildId/fun-commands', ensureAuth, (req, res) => {
   const { name, responses, type } = req.body;
   if (!name || !responses || responses.length === 0) return res.status(400).json({ error: 'Missing fields' });
 
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   if (!settings.funCommands) settings.funCommands = [];
   
   const command = {
@@ -220,7 +261,7 @@ app.post('/api/guild/:guildId/fun-commands', ensureAuth, (req, res) => {
   };
   
   settings.funCommands.push(command);
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true, command });
 });
 
@@ -228,18 +269,17 @@ app.delete('/api/guild/:guildId/fun-commands/:commandId', ensureAuth, (req, res)
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
 
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   settings.funCommands = settings.funCommands.filter(c => c.id !== req.params.commandId);
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true });
 });
 
 // ━━━ RESPONSES API ━━━
-
 app.get('/api/guild/:guildId/responses', ensureAuth, (req, res) => {
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild) return res.status(403).json({ error: 'Access denied' });
-  const responses = db.getGuild(req.params.guildId).responses || {};
+  const responses = getGuildSettings(req.params.guildId).responses || {};
   res.json(responses);
 });
 
@@ -250,9 +290,9 @@ app.post('/api/guild/:guildId/responses/:trigger', ensureAuth, (req, res) => {
   const { response } = req.body;
   if (!response) return res.status(400).json({ error: 'Missing response' });
 
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   settings.responses[req.params.trigger] = response;
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true, responses: settings.responses });
 });
 
@@ -260,14 +300,13 @@ app.delete('/api/guild/:guildId/responses/:trigger', ensureAuth, (req, res) => {
   const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
   if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
 
-  const settings = db.getGuild(req.params.guildId);
+  const settings = getGuildSettings(req.params.guildId);
   delete settings.responses[req.params.trigger];
-  db.saveGuild(req.params.guildId, settings);
+  saveGuildSettings(req.params.guildId, settings);
   res.json({ success: true, responses: settings.responses });
 });
 
 // ━━━ PAGES ━━━
-
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/dashboard', (req, res) => {
   if (!req.session.user) return res.redirect('/');
@@ -278,10 +317,7 @@ app.get('/guild/:guildId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'guild-settings.html'));
 });
 
-// ━━━ WEB SERVER START & BOT LOADER ━━━
+// ━━━ START DASHBOARD SERVER ━━━
 app.listen(PORT, () => {
   console.log(`🌐 Dashboard Interface live on port ${PORT}`);
-  
-  // This line fires up your bot process right next to the web server safely!
-  require('./bot.js');
 });

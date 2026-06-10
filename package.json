@@ -4,7 +4,7 @@
   "description": "A powerful public Discord moderation & security bot with web dashboard",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js & node bot.js"
   },
   "dependencies": {
     "discord.js": "^14.15.3",

@@ -1,9 +1,8 @@
 // ━━━ 1. REQUIRED MODULES & IMPORTS ━━━
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
-
-// Require your existing database file to sync configuration data
-const db = require('./database'); 
 
 // ━━━ 2. DISCORD BOT CLIENT INITIALIZATION ━━━
 const client = new Client({
@@ -16,37 +15,46 @@ const client = new Client({
 });
 
 const config = {
-  PREFIX: '!' // Default bot prefix
+  PREFIX: '!' 
 };
+
+const DB_FILE = path.join(__dirname, 'database.json');
+
+// Helper to pull current settings directly from shared JSON database
+function getGuildSettings(guildId) {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const dbData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      if (dbData[guildId]) return dbData[guildId];
+    }
+  } catch (err) {
+    console.error('Error reading database file inside bot process:', err);
+  }
+  return {};
+}
 
 // ━━━ 3. CORE BOT COMMAND ENGINE HANDLER ━━━
 client.on('messageCreate', async (message) => {
-  // Defensive guard against bot loops or webhook triggers
-  if (message.author.bot || message.webhookId) return;
+  if (message.author.bot || message.webhookId || !message.guild) return;
 
-  // Ensure this command is happening in a server guild
-  if (!message.guild) return;
+  // Retrieve real-time layout settings configuration maps
+  const settings = getGuildSettings(message.guild.id);
 
-  // Pull the fresh, current settings from your existing database module
-  const settings = db.getGuild(message.guild.id) || {};
-
-  // Prefix check
   if (message.content.startsWith(config.PREFIX)) {
     const args = message.content.slice(config.PREFIX.length).trim().split(/\s+/);
     const cmdName = args.shift().toLowerCase();
 
-    // ─── A. CUSTOM JAVASCRIPT COMMAND EVALUATION ENGINE ───
+    // ─── A. CUSTOM RUNTIME EXECUTION EVAL ENGINE ───
     const customCommands = settings.customCommands || [];
     const customCmd = customCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
     
     if (customCmd) {
       try {
-        // Enforce safe async compilation so custom execution code doesn't freeze the process
         const wrappedCode = `return (async () => { ${customCmd.code} })();`;
         const fn = new Function('message', 'args', 'guild', 'member', wrappedCode);
         await fn(message, args, message.guild, message.member);
       } catch (err) {
-        console.error(`❌ Runtime execution error inside custom command !${cmdName}:`, err);
+        console.error(`❌ Runtime error inside custom command !${cmdName}:`, err);
         await message.reply({
           embeds: [new EmbedBuilder()
             .setColor('#FF0000')
@@ -56,10 +64,10 @@ client.on('messageCreate', async (message) => {
             .setTimestamp()]
         }).catch(() => null);
       }
-      return; // Stop processing further commands once matched
+      return; 
     }
 
-    // ─── B. FUN COMMAND REPLIES (ARRAY RANDOMIZER) ───
+    // ─── B. FUN RESPONSE RANDOMIZER ENGINE ───
     const funCommands = settings.funCommands || [];
     const funCmd = funCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
     
@@ -71,7 +79,7 @@ client.on('messageCreate', async (message) => {
       return message.reply(response).catch(() => null);
     }
 
-    // ─── C. KEYWORD AUTO-RESPONSES MATCHING ───
+    // ─── C. KEYWORD AUTO-RESPONSES ───
     const responses = settings.responses || {};
     if (responses[cmdName]) {
       return message.reply(responses[cmdName]).catch(() => null);
@@ -79,10 +87,10 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// ━━━ 4. DISCORD CONNECTION HANDSHAKE ━━━
+// ━━━ 4. CONNECT TO DISCORD GATEWAY ━━━
 client.once('ready', () => {
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`🚀 WebzHook Guard v2.0 is ONLINE!`);
+  console.log(`🚀 WebzHook Guard Core Bot Module is ONLINE!`);
   console.log(`🤖 Logged in as: ${client.user.tag}`);
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 });
@@ -93,5 +101,5 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN).catch(err => {
-  console.error("❌ Failed to authenticate connection stream with Discord gateway:", err);
+  console.error("❌ Failed to authenticate with Discord gateway:", err);
 });
