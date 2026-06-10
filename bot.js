@@ -1,8 +1,7 @@
 // ━━━ 1. REQUIRED MODULES & IMPORTS ━━━
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
+const db = require('./database'); // Pointing cleanly to database.js
 
 // ━━━ 2. DISCORD BOT CLIENT INITIALIZATION ━━━
 const client = new Client({
@@ -18,34 +17,18 @@ const config = {
   PREFIX: '!' 
 };
 
-// Points directly to the shared JSON file database instead of a missing module
-const DB_FILE = path.join(__dirname, 'database.json');
-
-// Helper to pull current settings directly from shared JSON data safely
-function getGuildSettings(guildId) {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const dbData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-      if (dbData[guildId]) return dbData[guildId];
-    }
-  } catch (err) {
-    console.error('Error reading database file inside bot process:', err);
-  }
-  return {};
-}
-
 // ━━━ 3. CORE BOT COMMAND ENGINE HANDLER ━━━
 client.on('messageCreate', async (message) => {
   if (message.author.bot || message.webhookId || !message.guild) return;
 
-  // Retrieve real-time layout settings configuration maps from JSON
-  const settings = getGuildSettings(message.guild.id);
+  // Pull settings configured via your database logic
+  const settings = db.getGuild(message.guild.id) || {};
 
   if (message.content.startsWith(config.PREFIX)) {
     const args = message.content.slice(config.PREFIX.length).trim().split(/\s+/);
     const cmdName = args.shift().toLowerCase();
 
-    // ─── A. CUSTOM RUNTIME EXECUTION EVAL ENGINE ───
+    // ─── A. CUSTOM EVAL ENGINE ───
     const customCommands = settings.customCommands || [];
     const customCmd = customCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
     
@@ -68,7 +51,7 @@ client.on('messageCreate', async (message) => {
       return; 
     }
 
-    // ─── B. FUN RESPONSE RANDOMIZER ENGINE ───
+    // ─── B. FUN RESPONSE ENGINE ───
     const funCommands = settings.funCommands || [];
     const funCmd = funCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
     
