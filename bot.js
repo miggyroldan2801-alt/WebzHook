@@ -18,9 +18,10 @@ const config = {
   PREFIX: '!' 
 };
 
+// Points directly to the shared JSON file database instead of a missing module
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// Helper to pull current settings directly from shared JSON database
+// Helper to pull current settings directly from shared JSON data safely
 function getGuildSettings(guildId) {
   try {
     if (fs.existsSync(DB_FILE)) {
@@ -37,7 +38,7 @@ function getGuildSettings(guildId) {
 client.on('messageCreate', async (message) => {
   if (message.author.bot || message.webhookId || !message.guild) return;
 
-  // Retrieve real-time layout settings configuration maps
+  // Retrieve real-time layout settings configuration maps from JSON
   const settings = getGuildSettings(message.guild.id);
 
   if (message.content.startsWith(config.PREFIX)) {
