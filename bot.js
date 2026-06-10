@@ -1,22 +1,19 @@
-// ━━━ CUSTOM COMMANDS ━━━
-  if (!message.author.bot && message.content.startsWith(config.PREFIX)) {
-    const args = message.content.slice(config.PREFIX.length).trim().split(/\s+/);
-    const cmdName = args.shift().toLowerCase();
-    
-    // ━━━ CUSTOM COMMANDS ━━━
-// NOTICE: Added 'async' right here before (message) so the 'await' keywords inside work perfectly!
+// ━━━ CUSTOM, FUN, AND AUTO COMMANDS SYSTEM ━━━
 client.on('messageCreate', async (message) => {
-  if (!message.author.bot && message.content.startsWith(config.PREFIX)) {
+  // Ignore messages from bots or webhooks
+  if (message.author.bot) return;
+
+  // Make sure it starts with the bot prefix
+  if (message.content.startsWith(config.PREFIX)) {
     const args = message.content.slice(config.PREFIX.length).trim().split(/\s+/);
     const cmdName = args.shift().toLowerCase();
-    
-    // Custom Commands (JavaScript)
+
+    // 1. Custom Commands (JavaScript Execution Engine)
     const customCommands = settings.customCommands || [];
     const customCmd = customCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
     
     if (customCmd) {
       try {
-        // We wrap the code cleanly to make sure it handles custom async functions safely
         const wrappedCode = `return (async () => { ${customCmd.code} })();`;
         const fn = new Function('message', 'args', 'guild', 'member', wrappedCode);
         await fn(message, args, message.guild, message.member);
@@ -33,7 +30,7 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
-    // Fun Commands (Random Responses)
+    // 2. Fun Commands (Random String Array Selector)
     const funCommands = settings.funCommands || [];
     const funCmd = funCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
     
@@ -45,26 +42,10 @@ client.on('messageCreate', async (message) => {
       return message.reply(response).catch(() => null);
     }
 
-    // Auto Responses
+    // 3. Simple Keyword Auto Responses
     const responses = settings.responses || {};
     if (responses[cmdName]) {
       return message.reply(responses[cmdName]).catch(() => null);
     }
   }
 });
-
-    // Fun Commands (Random Responses)
-    const funCommands = settings.funCommands || [];
-    const funCmd = funCommands.find(c => c.name.toLowerCase() === cmdName && c.enabled !== false);
-    
-    if (funCmd) {
-      const response = funCmd.responses[Math.floor(Math.random() * funCmd.responses.length)];
-      return message.reply(response);
-    }
-
-    // Auto Responses
-    const responses = settings.responses || {};
-    if (responses[cmdName]) {
-      return message.reply(responses[cmdName]);
-    }
-  }
