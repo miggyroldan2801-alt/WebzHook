@@ -1,33 +1,287 @@
 require('dotenv').config();
-const { spawn } = require('child_process');
+const express = require('express');
 const path = require('path');
+const axios = require('axios');
+const session = require('express-session');
+const db = require('./database');
+const config = require('./config');
 
-console.log('🚀 WebzHook Guard v2.0');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const botProcess = spawn('node', [path.join(__dirname, 'bot.js')], {
-  stdio: 'inherit',
-  shell: true,
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'http://localhost:3000/auth/callback';
+
+// MIDDLEWARE
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
+}));
+
+// AUTH MIDDLEWARE
+async function ensureAuth(req, res, next) {
+  if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
+  next();
+}
+
+// DISCORD OAUTH
+app.get('/auth/login', (req, res) => {
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(DISCORD_REDIRECT_URI)}&response_type=code&scope=identify%20guilds`;
+  res.redirect(url);
 });
 
-const serverProcess = spawn('node', [path.join(__dirname, 'server.js')], {
-  stdio: 'inherit',
-  shell: true,
+app.get('/auth/callback', async (req, res) => {
+  const code = req.query.code;
+  if (!code) return res.redirect('/?error=no_code');
+
+  try {
+    const tokenRes = await axios.post('https://discord.com/api/oauth2/token', {
+      client_id: DISCORD_CLIENT_ID,
+      client_secret: DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: DISCORD_REDIRECT_URI,
+    });
+
+    const userRes = await axios.get('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${tokenRes.data.access_token}` },
+    });
+
+    const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
+      headers: { Authorization: `Bearer ${tokenRes.data.access_token}` },
+    });
+
+    req.session.user = {
+      id: userRes.data.id,
+      username: userRes.data.username,
+      avatar: userRes.data.avatar,
+      discriminator: userRes.data.discriminator,
+      guilds: guildsRes.data.filter(g => g.owner || (g.permissions & 8) === 8),
+      accessToken: tokenRes.data.access_token,
+    };
+
+    res.redirect('/dashboard');
+  } catch (err) {
+    console.error('OAuth error:', err.message);
+    res.redirect('/?error=auth_failed');
+  }
 });
 
-botProcess.on('exit', (code) => {
-  console.error('❌ Bot process exited with code', code);
-  process.exit(code);
+app.get('/auth/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/'));
 });
 
-serverProcess.on('exit', (code) => {
-  console.error('❌ Server process exited with code', code);
-  process.exit(code);
+// ━━━ USER & GUILD API ━━━
+
+app.get('/api/user', ensureAuth, (req, res) => {
+  res.json(req.session.user);
 });
 
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down...');
-  botProcess.kill();
-  serverProcess.kill();
-  process.exit(0);
+app.get('/api/guilds', ensureAuth, (req, res) => {
+  const userGuilds = req.session.user.guilds;
+  const enriched = userGuilds.map(g => ({
+    id: g.id,
+    name: g.name,
+    icon: g.icon,
+    owner: g.owner,
+    settings: db.getGuild(g.id),
+  }));
+  res.json(enriched);
+});
+
+app.get('/api/guild/:guildId', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild) return res.status(403).json({ error: 'Access denied' });
+  const settings = db.getGuild(req.params.guildId);
+  res.json({ guild, settings });
+});
+
+// ━━━ MODULES API ━━━
+
+app.get('/api/guild/:guildId/modules', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild) return res.status(403).json({ error: 'Access denied' });
+  const settings = db.getGuild(req.params.guildId);
+  res.json({
+    modules: settings.modules,
+    detectionEnabled: settings.detectionEnabled,
+    enabled: settings.enabled,
+  });
+});
+
+app.post('/api/guild/:guildId/module/:moduleName', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const { value } = req.body;
+  const settings = db.getGuild(req.params.guildId);
+  if (settings.modules.hasOwnProperty(req.params.moduleName)) {
+    settings.modules[req.params.moduleName] = value;
+    db.saveGuild(req.params.guildId, settings);
+    res.json({ success: true, modules: settings.modules });
+  } else {
+    res.status(400).json({ error: 'Invalid module' });
+  }
+});
+
+// ━━━ CUSTOM COMMANDS API ━━━
+
+app.get('/api/guild/:guildId/custom-commands', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild) return res.status(403).json({ error: 'Access denied' });
+  const commands = db.getGuild(req.params.guildId).customCommands || [];
+  res.json(commands);
+});
+
+app.post('/api/guild/:guildId/custom-commands', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const { name, code, description } = req.body;
+  if (!name || !code) return res.status(400).json({ error: 'Missing fields' });
+
+  const settings = db.getGuild(req.params.guildId);
+  if (!settings.customCommands) settings.customCommands = [];
+  
+  const command = {
+    id: Date.now().toString(),
+    name,
+    code,
+    description: description || '',
+    createdAt: new Date().toISOString(),
+    enabled: true,
+  };
+  
+  settings.customCommands.push(command);
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true, command });
+});
+
+app.put('/api/guild/:guildId/custom-commands/:commandId', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const { code, description, enabled } = req.body;
+  const settings = db.getGuild(req.params.guildId);
+  const cmd = settings.customCommands.find(c => c.id === req.params.commandId);
+  
+  if (!cmd) return res.status(404).json({ error: 'Command not found' });
+  
+  if (code) cmd.code = code;
+  if (description !== undefined) cmd.description = description;
+  if (enabled !== undefined) cmd.enabled = enabled;
+  
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true, command: cmd });
+});
+
+app.delete('/api/guild/:guildId/custom-commands/:commandId', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const settings = db.getGuild(req.params.guildId);
+  settings.customCommands = settings.customCommands.filter(c => c.id !== req.params.commandId);
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true });
+});
+
+// ━━━ FUN COMMANDS API ━━━
+
+app.get('/api/guild/:guildId/fun-commands', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild) return res.status(403).json({ error: 'Access denied' });
+  const commands = db.getGuild(req.params.guildId).funCommands || [];
+  res.json(commands);
+});
+
+app.post('/api/guild/:guildId/fun-commands', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const { name, responses, type } = req.body;
+  if (!name || !responses || responses.length === 0) return res.status(400).json({ error: 'Missing fields' });
+
+  const settings = db.getGuild(req.params.guildId);
+  if (!settings.funCommands) settings.funCommands = [];
+  
+  const command = {
+    id: Date.now().toString(),
+    name,
+    responses,
+    type: type || 'random',
+    createdAt: new Date().toISOString(),
+    enabled: true,
+  };
+  
+  settings.funCommands.push(command);
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true, command });
+});
+
+app.delete('/api/guild/:guildId/fun-commands/:commandId', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const settings = db.getGuild(req.params.guildId);
+  settings.funCommands = settings.funCommands.filter(c => c.id !== req.params.commandId);
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true });
+});
+
+// ━━━ RESPONSES API ━━━
+
+app.get('/api/guild/:guildId/responses', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild) return res.status(403).json({ error: 'Access denied' });
+  const responses = db.getGuild(req.params.guildId).responses || {};
+  res.json(responses);
+});
+
+app.post('/api/guild/:guildId/responses/:trigger', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const { response } = req.body;
+  if (!response) return res.status(400).json({ error: 'Missing response' });
+
+  const settings = db.getGuild(req.params.guildId);
+  settings.responses[req.params.trigger] = response;
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true, responses: settings.responses });
+});
+
+app.delete('/api/guild/:guildId/responses/:trigger', ensureAuth, (req, res) => {
+  const guild = req.session.user.guilds.find(g => g.id === req.params.guildId);
+  if (!guild || (!guild.owner && !(guild.permissions & 8))) return res.status(403).json({ error: 'Access denied' });
+
+  const settings = db.getGuild(req.params.guildId);
+  delete settings.responses[req.params.trigger];
+  db.saveGuild(req.params.guildId, settings);
+  res.json({ success: true, responses: settings.responses });
+});
+
+// ━━━ PAGES ━━━
+
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/dashboard', (req, res) => {
+  if (!req.session.user) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+app.get('/guild/:guildId', (req, res) => {
+  if (!req.session.user) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public', 'guild-settings.html'));
+});
+
+// ━━━ WEB SERVER START & BOT LOADER ━━━
+app.listen(PORT, () => {
+  console.log(`🌐 Dashboard Interface live on port ${PORT}`);
+  
+  // This line fires up your bot process right next to the web server safely!
+  require('./bot.js');
 });
