@@ -1,42 +1,50 @@
-const spamMap = new Map();
-const duplicateMap = new Map();
-const raidMap = new Map();
+// In-memory maps for detection
+const spamMap     = new Map(); // userId:guildId -> timestamps[]
+const dupMap      = new Map(); // userId:guildId -> {content, count, ts}
+const raidMap     = new Map(); // guildId        -> timestamps[]
+const nukeMap     = new Map(); // userId:guildId -> timestamps[]
+const linkMap     = new Map(); // userId:guildId -> count
 
-function trackSpam(userId, guildId) {
-  const key = `${guildId}:${userId}`;
-  const now = Date.now();
-  if (!spamMap.has(key)) spamMap.set(key, []);
-  const times = spamMap.get(key).filter(t => now - t < 4000);
+function trackSpam(uid, gid, windowMs = 4000, limit = 5) {
+  const key = `${uid}:${gid}`, now = Date.now();
+  const times = (spamMap.get(key) || []).filter(t => now - t < windowMs);
   times.push(now);
   spamMap.set(key, times);
   return times.length;
 }
 
-function trackDuplicate(userId, guildId, content) {
-  const key = `${guildId}:${userId}`;
-  const entry = duplicateMap.get(key);
-  if (entry && entry.content === content) {
-    entry.count++;
-    duplicateMap.set(key, entry);
-    return entry.count;
+function trackDuplicate(uid, gid, content, limit = 4) {
+  const key = `${uid}:${gid}`;
+  const e   = dupMap.get(key);
+  if (e && e.content === content && Date.now() - e.ts < 30000) {
+    e.count++;
+    e.ts = Date.now();
+    dupMap.set(key, e);
+    return e.count;
   }
-  duplicateMap.set(key, { content, count: 1 });
+  dupMap.set(key, { content, count: 1, ts: Date.now() });
   return 1;
 }
 
-function trackRaid(guildId) {
-  const now = Date.now();
-  if (!raidMap.has(guildId)) raidMap.set(guildId, []);
-  const times = raidMap.get(guildId).filter(t => now - t < 10000);
+function trackRaid(gid, windowMs = 10000) {
+  const now   = Date.now();
+  const times = (raidMap.get(gid) || []).filter(t => now - t < windowMs);
   times.push(now);
-  raidMap.set(guildId, times);
+  raidMap.set(gid, times);
   return times.length;
 }
 
-function clearUser(userId, guildId) {
-  const key = `${guildId}:${userId}`;
-  spamMap.delete(key);
-  duplicateMap.delete(key);
+function trackNukeAction(uid, gid, windowMs = 10000) {
+  const key   = `${uid}:${gid}`, now = Date.now();
+  const times = (nukeMap.get(key) || []).filter(t => now - t < windowMs);
+  times.push(now);
+  nukeMap.set(key, times);
+  return times.length;
 }
 
-module.exports = { trackSpam, trackDuplicate, trackRaid, clearUser };
+function clearUser(uid, gid) {
+  spamMap.delete(`${uid}:${gid}`);
+  dupMap.delete(`${uid}:${gid}`);
+}
+
+module.exports = { trackSpam, trackDuplicate, trackRaid, trackNukeAction, clearUser };

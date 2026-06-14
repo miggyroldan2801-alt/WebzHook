@@ -3,71 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebzHook Guard - Secure Discord Bot</title>
+  <title>WebzHook Guard — Discord Security Bot</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="container">
-      <h1 class="logo">⚡ WebzHook Guard</h1>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="/auth/login" class="btn btn-primary">Get Started</a>
-      </div>
+    <a href="/" class="navbar-logo">⚡ WebzHook Guard</a>
+    <div class="navbar-right">
+      <a href="#features" class="btn btn-ghost btn-sm">Features</a>
+      <a href="/auth/login" class="btn btn-primary btn-sm">Open Dashboard →</a>
     </div>
   </nav>
 
   <section class="hero">
-    <div class="hero-content">
-      <h1>Secure Your Discord Server</h1>
-      <p>Advanced moderation, anti-raid protection, and intelligent automation. All from a beautiful, intuitive dashboard.</p>
-      
-      <div class="hero-buttons">
-        <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot&permissions=8" class="btn btn-primary">📩 Invite Bot</a>
-        <a href="/auth/login" class="btn btn-secondary">🔐 Dashboard</a>
+    <div class="hero-glow hero-glow-1"></div>
+    <div class="hero-glow hero-glow-2"></div>
+    <div class="hero-badge">⚡ Now with 75+ commands & real-time dashboard</div>
+    <h1>The Last Security Bot<br>Your Server Needs</h1>
+    <p>Advanced moderation, anti-raid, anti-nuke, and intelligent automation — all controlled from a beautiful dashboard.</p>
+    <div class="hero-btns">
+      <a id="invite-btn" href="#" class="btn btn-primary btn-lg">📩 Invite to Server</a>
+      <a href="/auth/login" class="btn btn-ghost btn-lg">🔐 Open Dashboard</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num">75+</div><div class="hero-stat-label">Commands</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">14</div><div class="hero-stat-label">Security Modules</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">100%</div><div class="hero-stat-label">Customizable</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">Free</div><div class="hero-stat-label">Forever</div></div>
+    </div>
+  </section>
+
+  <section id="features" class="features">
+    <div class="features-container">
+      <div class="section-header">
+        <div class="section-label">Why WebzHook Guard?</div>
+        <h2 class="section-title">Everything your server needs</h2>
+        <p class="section-subtitle">One bot. Complete protection. Full control.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>Anti-Raid Protection</h3>
+          <p>Instant server lockdown when a raid is detected. Configurable join thresholds to match your server size.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💣</div>
+          <h3>Anti-Nuke System</h3>
+          <p>Automatically bans users attempting mass channel or role deletion. Zero-tolerance for server destruction.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Smart Spam Detection</h3>
+          <p>Multi-layer detection for message spam, duplicate messages, mass pings, caps abuse, and invite links.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Verification Gate</h3>
+          <p>Button-click or captcha verification. Keeps bots and alts out while welcoming real members instantly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚙️</div>
+          <h3>Custom Commands</h3>
+          <p>Write real JavaScript code to create custom commands. Or use simple text responses — your choice.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Live Dashboard</h3>
+          <p>Toggle modules, set thresholds, manage custom commands, and view audit logs from a beautiful web interface.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👋</div>
+          <h3>Welcome System</h3>
+          <p>Customizable welcome and leave messages with variables like {user}, {server}, and {count}.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎭</div>
+          <h3>Auto-Role</h3>
+          <p>Automatically assign roles to new members. Combine with verification for a complete onboarding flow.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Full Audit Logs</h3>
+          <p>Every mod action is logged and viewable from the dashboard. Complete transparency for your team.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <section id="features" style="padding: 80px 0; text-align: center;">
-    <div class="container">
-      <h2 class="section-title">Everything You Need</h2>
-      <p class="section-subtitle">All features at your fingertips</p>
-      
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px;">
-        <div style="padding: 32px; background: rgba(26, 26, 58, 0.6); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 16px;">
-          <div style="font-size: 40px; margin-bottom: 16px;">🛡️</div>
-          <h3 style="margin-bottom: 12px; color: #e0e0e0;">Smart Protection</h3>
-          <p style="color: #a0a0c0;">Auto-detect and block raids, spam, and abuse</p>
-        </div>
-        <div style="padding: 32px; background: rgba(26, 26, 58, 0.6); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 16px;">
-          <div style="font-size: 40px; margin-bottom: 16px;">📊</div>
-          <h3 style="margin-bottom: 12px; color: #e0e0e0;">Beautiful Dashboard</h3>
-          <p style="color: #a0a0c0;">Control everything from one elegant interface</p>
-        </div>
-        <div style="padding: 32px; background: rgba(26, 26, 58, 0.6); border: 1px solid rgba(88, 101, 242, 0.2); border-radius: 16px;">
-          <div style="font-size: 40px; margin-bottom: 16px;">⚙️</div>
-          <h3 style="margin-bottom: 12px; color: #e0e0e0;">Custom Commands</h3>
-          <p style="color: #a0a0c0;">Create custom commands with code or presets</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <footer style="text-align:center; padding: 48px 24px; color: var(--text3); border-top: 1px solid var(--border); font-size:14px;">
+    <p style="margin-bottom:12px;"><strong style="color:var(--text);">⚡ WebzHook Guard</strong> — Open Source Discord Security</p>
+    <p>
+      <a href="/auth/login" style="color:var(--accent);text-decoration:none;margin:0 12px;">Dashboard</a>
+      <a href="#features"  style="color:var(--accent);text-decoration:none;margin:0 12px;">Features</a>
+    </p>
+  </footer>
 
   <script>
-    // Check if user is logged in
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/user');
-        if (res.ok) {
-          window.location.href = '/dashboard';
-        }
-      } catch (err) {
-        // Not logged in, stay on landing page
-      }
-    }
-    
-    checkAuth();
+    // Auto-redirect logged-in users to dashboard
+    fetch('/api/me').then(r => { if (r.ok) window.location.href = '/dashboard'; }).catch(()=>{});
+
+    // Set invite link
+    fetch('/api/me').catch(()=>{});
+    const clientId = ''; // filled server-side via env; fallback
+    document.getElementById('invite-btn').href =
+      `https://discord.com/api/oauth2/authorize?client_id=${clientId}&scope=bot&permissions=8`;
   </script>
 </body>
 </html>

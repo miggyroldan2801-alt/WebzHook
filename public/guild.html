@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Settings — WebzHook Guard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-logo">⚡ WebzHook Guard</a>
+    <div class="navbar-right">
+      <a href="/dashboard" class="btn btn-ghost btn-sm">← Servers</a>
+      <div class="user-chip">
+        <img id="nav-avatar" src="" alt="">
+        <span id="nav-username"></span>
+      </div>
+    </div>
+  </nav>
+
+  <div id="page-loader" class="page-loader"><div class="spinner"></div><span>Loading settings...</span></div>
+
+  <div id="page-content" style="display:none;">
+    <div style="max-width:1100px;margin:0 auto;padding:32px;">
+
+      <!-- Guild Header -->
+      <div class="guild-header">
+        <img id="guild-icon" class="guild-header-icon" src="" alt="">
+        <div class="guild-header-info">
+          <h2 id="guild-name"></h2>
+          <p id="guild-id" style="color:var(--text3);font-size:12px;"></p>
+        </div>
+        <div id="guild-status-badge" class="guild-header-status off">🔴 Inactive</div>
+        <div style="display:flex;gap:10px;margin-left:16px;">
+          <button class="btn btn-primary btn-sm" onclick="toggleBot(true)">Enable Bot</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleBot(false)">Disable</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('modules')">🛡️ Modules</button>
+        <button class="tab-btn" onclick="switchTab('commands')">⚙️ Custom Commands</button>
+        <button class="tab-btn" onclick="switchTab('fun')">🎉 Fun Commands</button>
+        <button class="tab-btn" onclick="switchTab('responses')">💬 Auto Responses</button>
+        <button class="tab-btn" onclick="switchTab('config')">🔧 Config</button>
+        <button class="tab-btn" onclick="switchTab('logs')">📋 Logs</button>
+      </div>
+
+      <!-- ── MODULES ── -->
+      <div id="tab-modules" class="tab-pane active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div><h3 style="font-size:18px;font-weight:800;">Security Modules</h3><p style="color:var(--text2);font-size:14px;margin-top:3px;">Toggle on/off. Changes apply instantly to the bot.</p></div>
+          <button class="btn btn-primary btn-sm" onclick="saveThresholds()">💾 Save Thresholds</button>
+        </div>
+        <div class="modules-grid" id="modules-grid"></div>
+      </div>
+
+      <!-- ── CUSTOM COMMANDS ── -->
+      <div id="tab-commands" class="tab-pane">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div><h3 style="font-size:18px;font-weight:800;">Custom Commands</h3><p style="color:var(--text2);font-size:14px;margin-top:3px;">Write real JS code. Variables: <code style="background:rgba(88,101,242,0.15);padding:2px 6px;border-radius:5px;">message, args, guild, member</code></p></div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('cmd-modal')">+ New Command</button>
+        </div>
+        <div class="cmd-list" id="cmd-list"></div>
+      </div>
+
+      <!-- ── FUN COMMANDS ── -->
+      <div id="tab-fun" class="tab-pane">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div><h3 style="font-size:18px;font-weight:800;">Fun Commands</h3><p style="color:var(--text2);font-size:14px;margin-top:3px;">Random response commands. Use <code style="background:rgba(88,101,242,0.15);padding:2px 6px;border-radius:5px;">{user}</code> to mention the sender.</p></div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('fun-modal')">+ New Fun Command</button>
+        </div>
+        <div class="cmd-list" id="fun-list"></div>
+      </div>
+
+      <!-- ── AUTO RESPONSES ── -->
+      <div id="tab-responses" class="tab-pane">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div><h3 style="font-size:18px;font-weight:800;">Auto Responses</h3><p style="color:var(--text2);font-size:14px;margin-top:3px;">Bot replies when someone types the trigger word.</p></div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('resp-modal')">+ New Response</button>
+        </div>
+        <div class="cmd-list" id="resp-list"></div>
+      </div>
+
+      <!-- ── CONFIG ── -->
+      <div id="tab-config" class="tab-pane">
+        <h3 style="font-size:18px;font-weight:800;margin-bottom:20px;">Server Configuration</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;">
+
+          <!-- General -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+            <h4 style="margin-bottom:16px;font-size:15px;font-weight:700;">⚙️ General</h4>
+            <div class="form-row"><label>Log Channel ID</label><input id="cfg-logChannel" placeholder="Channel ID for mod logs"><small>Paste the channel ID where logs should be sent</small></div>
+            <div class="form-row"><label>Command Prefix</label><input id="cfg-prefix" placeholder="%" maxlength="3"><small>Default: %</small></div>
+            <button class="btn btn-primary btn-sm btn-block" onclick="saveConfig()">Save General</button>
+          </div>
+
+          <!-- Welcome -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+            <h4 style="margin-bottom:16px;font-size:15px;font-weight:700;">👋 Welcome System</h4>
+            <div class="form-row"><label>Welcome Channel ID</label><input id="cfg-welcomeChannel" placeholder="Channel ID"></div>
+            <div class="form-row"><label>Welcome Message</label><textarea id="cfg-welcomeMsg" placeholder="Welcome {user} to {server}!"></textarea><small>Variables: {user} {username} {server} {count}</small></div>
+            <button class="btn btn-primary btn-sm btn-block" onclick="saveWelcome()">Save Welcome</button>
+          </div>
+
+          <!-- Leave -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+            <h4 style="margin-bottom:16px;font-size:15px;font-weight:700;">👋 Leave System</h4>
+            <div class="form-row"><label>Leave Channel ID</label><input id="cfg-leaveChannel" placeholder="Channel ID"></div>
+            <div class="form-row"><label>Leave Message</label><textarea id="cfg-leaveMsg" placeholder="{username} has left the server."></textarea></div>
+            <button class="btn btn-primary btn-sm btn-block" onclick="saveLeave()">Save Leave</button>
+          </div>
+
+          <!-- Verification -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+            <h4 style="margin-bottom:16px;font-size:15px;font-weight:700;">🔐 Verification</h4>
+            <div class="form-row"><label>Mode</label>
+              <select id="cfg-verifyMode">
+                <option value="button">Button (one click)</option>
+                <option value="captcha">Captcha (code required)</option>
+              </select>
+            </div>
+            <div class="form-row"><label>Verify Message</label><textarea id="cfg-verifyMsg" placeholder="Click below to verify yourself."></textarea></div>
+            <button class="btn btn-primary btn-sm btn-block" onclick="saveVerify()">Save Verify Config</button>
+          </div>
+
+          <!-- Bad words -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+            <h4 style="margin-bottom:16px;font-size:15px;font-weight:700;">🤬 Bad Word Filter</h4>
+            <div class="form-row"><label>Filtered Words</label><textarea id="cfg-badwords" placeholder="word1&#10;word2&#10;word3" style="min-height:120px;"></textarea><small>One word per line. Enable "Bad Word Filter" module above.</small></div>
+            <button class="btn btn-primary btn-sm btn-block" onclick="saveBadwords()">Save Words</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── LOGS ── -->
+      <div id="tab-logs" class="tab-pane">
+        <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+          <div><h3 style="font-size:18px;font-weight:800;">Audit Logs</h3><p style="color:var(--text2);font-size:14px;margin-top:3px;">Last 50 mod actions taken in this server</p></div>
+          <button class="btn btn-ghost btn-sm" onclick="loadLogs()">🔄 Refresh</button>
+        </div>
+        <div class="log-list" id="log-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── MODALS ── -->
+
+  <!-- Custom Command Modal -->
+  <div class="modal-overlay" id="cmd-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ New Custom Command</h3>
+        <button class="modal-close" onclick="closeModal('cmd-modal')">✕</button>
+      </div>
+      <div class="form-row"><label>Command Name</label><input id="cmd-name" placeholder="mycommand" autocomplete="off"></div>
+      <div class="form-row"><label>Description</label><input id="cmd-desc" placeholder="What does this command do?"></div>
+      <div class="form-row">
+        <label>JavaScript Code</label>
+        <textarea id="cmd-code" style="min-height:180px;" placeholder="// Example: reply to the user&#10;await message.reply('Hello ' + message.author.username + '!');&#10;&#10;// Available: message, args, guild, member"></textarea>
+        <small>Full JS — async/await supported. Use message.reply(), message.channel.send(), etc.</small>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('cmd-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCommand()">Create Command</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fun Command Modal -->
+  <div class="modal-overlay" id="fun-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🎉 New Fun Command</h3>
+        <button class="modal-close" onclick="closeModal('fun-modal')">✕</button>
+      </div>
+      <div class="form-row"><label>Command Name</label><input id="fun-name" placeholder="hug"></div>
+      <div class="form-row">
+        <label>Responses (one per line)</label>
+        <textarea id="fun-responses" style="min-height:160px;" placeholder="{user} hugs everyone!&#10;{user} gives the biggest hug! 🤗&#10;Aww, {user} is feeling affectionate!"></textarea>
+        <small>Use {user} to mention whoever ran the command. A random response is picked each time.</small>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('fun-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveFunCommand()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Response Modal -->
+  <div class="modal-overlay" id="resp-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>💬 New Auto Response</h3>
+        <button class="modal-close" onclick="closeModal('resp-modal')">✕</button>
+      </div>
+      <div class="form-row"><label>Trigger Word / Command</label><input id="resp-trigger" placeholder="hello"><small>User types %hello and bot replies</small></div>
+      <div class="form-row"><label>Bot's Response</label><textarea id="resp-text" placeholder="Hello there! 👋"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('resp-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveResponse()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Command Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✏️ Edit Command</h3>
+        <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
+      </div>
+      <input type="hidden" id="edit-id">
+      <div class="form-row"><label>Command Name</label><input id="edit-name" readonly style="opacity:0.5;"></div>
+      <div class="form-row"><label>Description</label><input id="edit-desc"></div>
+      <div class="form-row"><label>JavaScript Code</label><textarea id="edit-code" style="min-height:200px;"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="updateCommand()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toasts"></div>
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    const guildId = location.pathname.split('/')[2];
+    let state = { settings: {}, modules: {}, thresholds: {}, commands: [], fun: [], responses: {} };
+
+    // ── Toast ─────────────────────────────────────────────────────────────────
+    function toast(msg, type = 'success') {
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.textContent = msg;
+      document.getElementById('toasts').appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+
+    // ── Modal helpers ─────────────────────────────────────────────────────────
+    function openModal(id)  { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      event.currentTarget.classList.add('active');
+      if (name === 'logs') loadLogs();
+    }
+
+    // ── API helpers ───────────────────────────────────────────────────────────
+    const api = async (method, path, body) => {
+      const res = await fetch(`/api/guilds/${guildId}${path}`, {
+        method, headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Request failed');
+      return res.json();
+    };
+
+    // ── Load everything ───────────────────────────────────────────────────────
+    async function init() {
+      try {
+        const [me, data, mods, cmds, fun, resps] = await Promise.all([
+          fetch('/api/me').then(r => r.json()),
+          api('GET', ''),
+          api('GET', '/modules'),
+          api('GET', '/commands'),
+          api('GET', '/fun'),
+          api('GET', '/responses'),
+        ]);
+
+        // Nav
+        document.getElementById('nav-username').textContent = me.globalName || me.username;
+        document.getElementById('nav-avatar').src = me.avatar
+          ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png`
+          : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+        state = { settings: data.settings, modules: mods, thresholds: data.settings.thresholds || {}, commands: cmds, fun, responses: resps };
+
+        // Guild header
+        document.getElementById('guild-name').textContent = data.guild.name;
+        document.getElementById('guild-id').textContent = `ID: ${data.guild.id}`;
+        document.getElementById('guild-icon').src = data.guild.icon
+          ? `https://cdn.discordapp.com/icons/${data.guild.id}/${data.guild.icon}.png`
+          : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        updateStatusBadge(data.settings.enabled && data.settings.detectionEnabled);
+
+        // Config fields
+        document.getElementById('cfg-logChannel').value   = data.settings.logChannelId    || '';
+        document.getElementById('cfg-prefix').value        = data.settings.prefix           || '%';
+        document.getElementById('cfg-welcomeChannel').value= data.settings.welcomeChannelId || '';
+        document.getElementById('cfg-welcomeMsg').value    = data.settings.welcomeMessage   || '';
+        document.getElementById('cfg-leaveChannel').value  = data.settings.leaveChannelId   || '';
+        document.getElementById('cfg-leaveMsg').value      = data.settings.leaveMessage     || '';
+        document.getElementById('cfg-verifyMode').value    = data.settings.verifyMode       || 'button';
+        document.getElementById('cfg-verifyMsg').value     = data.settings.verifyMessage    || '';
+        document.getElementById('cfg-badwords').value      = (data.settings.badwords||[]).join('\n');
+
+        renderModules();
+        renderCommands();
+        renderFun();
+        renderResponses();
+
+        document.getElementById('page-loader').style.display  = 'none';
+        document.getElementById('page-content').style.display = 'block';
+      } catch (err) {
+        toast('Failed to load — ' + err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    function updateStatusBadge(isOn) {
+      const b = document.getElementById('guild-status-badge');
+      b.textContent = isOn ? '🟢 Active' : '🔴 Inactive';
+      b.className = 'guild-header-status ' + (isOn ? 'on' : 'off');
+    }
+
+    async function toggleBot(enable) {
+      await api('PATCH', '/settings', { enabled: enable, detectionEnabled: enable });
+      updateStatusBadge(enable);
+      toast(`Bot ${enable ? 'enabled' : 'disabled'} ✅`);
+    }
+
+    // ── MODULE RENDER ─────────────────────────────────────────────────────────
+    const MODULE_META = {
+      antiSpam:       { icon:'💬', name:'Anti-Spam',       desc:'Auto-mute users who send too many messages too fast.',             thresh:['spamMessages','spamSeconds','muteDuration'] },
+      antiRaid:       { icon:'🚨', name:'Anti-Raid',       desc:'Lock server when too many users join at once.',                    thresh:['raidJoins','raidSeconds'] },
+      antiMassPing:   { icon:'👤', name:'Anti-Mass Ping',  desc:'Block messages with too many user/role mentions.',                 thresh:['massPingMentions'] },
+      antiCaps:       { icon:'🔡', name:'Anti-Caps',       desc:'Delete messages that are mostly uppercase.',                       thresh:['capsPercent'] },
+      antiDuplicate:  { icon:'🔁', name:'Anti-Duplicate',  desc:'Warn users who repeat the same message over and over.',            thresh:['duplicateCount'] },
+      antiNuke:       { icon:'💣', name:'Anti-Nuke',       desc:'Ban users who mass-delete channels or roles.',                     thresh:['nukeActions'] },
+      antiLogger:     { icon:'🔗', name:'Anti-Logger',     desc:'Delete messages containing suspicious external links.',            thresh:[] },
+      inviteFilter:   { icon:'📩', name:'Invite Filter',   desc:'Auto-delete messages with Discord invite links.',                  thresh:[] },
+      linkFilter:     { icon:'🌐', name:'Link Filter',     desc:'Block all links from non-moderators.',                             thresh:[] },
+      badwordFilter:  { icon:'🤬', name:'Bad Word Filter', desc:'Delete messages containing words from your bad word list.',        thresh:[] },
+      welcomeSystem:  { icon:'👋', name:'Welcome System',  desc:'Send a welcome message when members join.',                        thresh:[] },
+      leaveSystem:    { icon:'🚪', name:'Leave System',    desc:'Send a message when a member leaves.',                             thresh:[] },
+      autoRole:       { icon:'🎭', name:'Auto-Role',       desc:'Automatically assign roles to new members.',                       thresh:[] },
+      verification:   { icon:'🔐', name:'Verification',   desc:'Gate server access behind a verification step.',                   thresh:[] },
+      slowmodeAuto:   { icon:'🐌', name:'Auto Slowmode',  desc:'Automatically enable slowmode when a channel is flooded.',         thresh:['slowmodeAutoSeconds'] },
+    };
+
+    const THRESH_META = {
+      spamMessages:     { label:'Messages before mute',     min:2,  max:20,  default:5  },
+      spamSeconds:      { label:'Within X seconds',         min:1,  max:30,  default:4  },
+      raidJoins:        { label:'Joins to trigger raid',    min:3,  max:50,  default:10 },
+      raidSeconds:      { label:'Within X seconds',         min:1,  max:30,  default:10 },
+      massPingMentions: { label:'Max mentions per message', min:2,  max:20,  default:5  },
+      capsPercent:      { label:'Caps % threshold',         min:50, max:100, default:80 },
+      duplicateCount:   { label:'Duplicate count limit',    min:2,  max:10,  default:4  },
+      nukeActions:      { label:'Actions before ban',       min:2,  max:10,  default:3  },
+      muteDuration:     { label:'Auto-mute duration (sec)', min:5,  max:3600,default:30 },
+    };
+
+    function renderModules() {
+      const grid = document.getElementById('modules-grid');
+      grid.innerHTML = Object.entries(MODULE_META).map(([key, m]) => {
+        const isOn = !!state.modules[key];
+        const threshHtml = m.thresh.map(tk => {
+          const tm = THRESH_META[tk] || {};
+          return `<div><label>${tm.label || tk}</label><input type="number" id="thresh-${tk}" value="${state.thresholds[tk] ?? tm.default ?? ''}" min="${tm.min||0}" max="${tm.max||9999}"></div>`;
+        }).join('');
+        return `
+          <div class="module-card ${isOn ? 'enabled' : ''}" id="module-card-${key}">
+            <div class="module-card-top">
+              <div class="module-card-left">
+                <div class="module-card-icon">${m.icon}</div>
+                <h3>${m.name}</h3>
+                <p>${m.desc}</p>
+              </div>
+              <button class="toggle ${isOn ? 'on' : ''}" id="toggle-${key}" onclick="toggleModule('${key}')"></button>
+            </div>
+            ${threshHtml ? `<div class="module-extra">${threshHtml}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    async function toggleModule(key) {
+      const btn  = document.getElementById('toggle-' + key);
+      const card = document.getElementById('module-card-' + key);
+      const newVal = !btn.classList.contains('on');
+      btn.classList.toggle('on', newVal);
+      card.classList.toggle('enabled', newVal);
+      state.modules[key] = newVal;
+      try {
+        await api('PATCH', '/modules', { [key]: newVal });
+        toast(`${MODULE_META[key]?.name || key} ${newVal ? 'enabled' : 'disabled'}`);
+      } catch (err) {
+        // revert
+        btn.classList.toggle('on', !newVal);
+        card.classList.toggle('enabled', !newVal);
+        state.modules[key] = !newVal;
+        toast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function saveThresholds() {
+      const patch = {};
+      Object.keys(THRESH_META).forEach(tk => {
+        const el = document.getElementById('thresh-' + tk);
+        if (el) patch[tk] = Number(el.value);
+      });
+      await api('PATCH', '/thresholds', patch);
+      state.thresholds = { ...state.thresholds, ...patch };
+      toast('Thresholds saved ✅');
+    }
+
+    // ── CUSTOM COMMANDS ───────────────────────────────────────────────────────
+    function renderCommands() {
+      const list = document.getElementById('cmd-list');
+      if (!state.commands.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">⚙️</div><h3>No custom commands</h3><p>Create one to run JavaScript code in Discord.</p></div>'; return; }
+      list.innerHTML = state.commands.map(c => `
+        <div class="cmd-card">
+          <div class="cmd-card-info">
+            <div class="cmd-name">%${c.name}</div>
+            <div class="cmd-desc">${c.description || 'Custom command'}</div>
+            <div class="cmd-code-preview">${c.code.replace(/\n/g,' ')}</div>
+          </div>
+          <div class="cmd-actions">
+            <button class="btn btn-ghost btn-sm" onclick='editCommand(${JSON.stringify(c)})'>Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCommand('${c.id}')">Delete</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function saveCommand() {
+      const name = document.getElementById('cmd-name').value.trim().toLowerCase();
+      const code = document.getElementById('cmd-code').value.trim();
+      const desc = document.getElementById('cmd-desc').value.trim();
+      if (!name || !code) return toast('Name and code are required', 'error');
+      const data = await api('POST', '/commands', { name, code, description: desc });
+      state.commands.push(data.command);
+      renderCommands();
+      closeModal('cmd-modal');
+      toast('Command created ✅');
+      document.getElementById('cmd-name').value = document.getElementById('cmd-code').value = document.getElementById('cmd-desc').value = '';
+    }
+
+    function editCommand(cmd) {
+      document.getElementById('edit-id').value   = cmd.id;
+      document.getElementById('edit-name').value = cmd.name;
+      document.getElementById('edit-desc').value = cmd.description || '';
+      document.getElementById('edit-code').value = cmd.code;
+      openModal('edit-modal');
+    }
+
+    async function updateCommand() {
+      const id   = document.getElementById('edit-id').value;
+      const code = document.getElementById('edit-code').value.trim();
+      const desc = document.getElementById('edit-desc').value.trim();
+      await api('PUT', `/commands/${id}`, { code, description: desc });
+      const idx = state.commands.findIndex(c => c.id === id);
+      if (idx > -1) { state.commands[idx].code = code; state.commands[idx].description = desc; }
+      renderCommands();
+      closeModal('edit-modal');
+      toast('Command updated ✅');
+    }
+
+    async function deleteCommand(id) {
+      if (!confirm('Delete this command?')) return;
+      await api('DELETE', `/commands/${id}`);
+      state.commands = state.commands.filter(c => c.id !== id);
+      renderCommands();
+      toast('Command deleted');
+    }
+
+    // ── FUN COMMANDS ──────────────────────────────────────────────────────────
+    function renderFun() {
+      const list = document.getElementById('fun-list');
+      if (!state.fun.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">🎉</div><h3>No fun commands</h3><p>Create commands with random responses.</p></div>'; return; }
+      list.innerHTML = state.fun.map(c => `
+        <div class="cmd-card">
+          <div class="cmd-card-info">
+            <div class="cmd-name">%${c.name}</div>
+            <div class="cmd-desc">${c.responses.length} random response${c.responses.length !== 1 ? 's' : ''}</div>
+            <div class="cmd-code-preview">${c.responses[0]}</div>
+          </div>
+          <div class="cmd-actions">
+            <button class="btn btn-danger btn-sm" onclick="deleteFun('${c.id}')">Delete</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function saveFunCommand() {
+      const name = document.getElementById('fun-name').value.trim().toLowerCase();
+      const raw  = document.getElementById('fun-responses').value.trim();
+      if (!name || !raw) return toast('Name and responses are required', 'error');
+      const responses = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+      const data = await api('POST', '/fun', { name, responses });
+      state.fun.push(data.command);
+      renderFun();
+      closeModal('fun-modal');
+      toast('Fun command created ✅');
+      document.getElementById('fun-name').value = document.getElementById('fun-responses').value = '';
+    }
+
+    async function deleteFun(id) {
+      if (!confirm('Delete this fun command?')) return;
+      await api('DELETE', `/fun/${id}`);
+      state.fun = state.fun.filter(c => c.id !== id);
+      renderFun();
+      toast('Deleted');
+    }
+
+    // ── RESPONSES ─────────────────────────────────────────────────────────────
+    function renderResponses() {
+      const list = document.getElementById('resp-list');
+      const entries = Object.entries(state.responses);
+      if (!entries.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><h3>No auto responses</h3><p>Create keyword triggers with automatic replies.</p></div>'; return; }
+      list.innerHTML = entries.map(([trigger, text]) => `
+        <div class="cmd-card">
+          <div class="cmd-card-info">
+            <div class="cmd-name">%${trigger}</div>
+            <div class="cmd-desc">${text}</div>
+          </div>
+          <div class="cmd-actions">
+            <button class="btn btn-danger btn-sm" onclick="deleteResponse('${trigger}')">Delete</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function saveResponse() {
+      const trigger = document.getElementById('resp-trigger').value.trim().toLowerCase();
+      const text    = document.getElementById('resp-text').value.trim();
+      if (!trigger || !text) return toast('Both fields required', 'error');
+      await api('PUT', '/responses', { trigger, response: text });
+      state.responses[trigger] = text;
+      renderResponses();
+      closeModal('resp-modal');
+      toast('Response saved ✅');
+      document.getElementById('resp-trigger').value = document.getElementById('resp-text').value = '';
+    }
+
+    async function deleteResponse(trigger) {
+      if (!confirm(`Delete response for "${trigger}"?`)) return;
+      await api('DELETE', `/responses/${trigger}`);
+      delete state.responses[trigger];
+      renderResponses();
+      toast('Deleted');
+    }
+
+    // ── CONFIG SAVES ──────────────────────────────────────────────────────────
+    async function saveConfig() {
+      await api('PATCH', '/settings', {
+        logChannelId: document.getElementById('cfg-logChannel').value.trim() || null,
+        prefix:       document.getElementById('cfg-prefix').value.trim() || '%',
+      });
+      toast('General settings saved ✅');
+    }
+
+    async function saveWelcome() {
+      await api('PATCH', '/settings', {
+        welcomeChannelId: document.getElementById('cfg-welcomeChannel').value.trim() || null,
+        welcomeMessage:   document.getElementById('cfg-welcomeMsg').value.trim(),
+      });
+      // Also enable the module
+      await api('PATCH', '/modules', { welcomeSystem: true });
+      state.modules.welcomeSystem = true;
+      const btn = document.getElementById('toggle-welcomeSystem');
+      const card = document.getElementById('module-card-welcomeSystem');
+      if (btn) { btn.classList.add('on'); card?.classList.add('enabled'); }
+      toast('Welcome system saved & enabled ✅');
+    }
+
+    async function saveLeave() {
+      await api('PATCH', '/settings', {
+        leaveChannelId: document.getElementById('cfg-leaveChannel').value.trim() || null,
+        leaveMessage:   document.getElementById('cfg-leaveMsg').value.trim(),
+      });
+      await api('PATCH', '/modules', { leaveSystem: true });
+      toast('Leave system saved & enabled ✅');
+    }
+
+    async function saveVerify() {
+      await api('PATCH', '/settings', {
+        verifyMode:    document.getElementById('cfg-verifyMode').value,
+        verifyMessage: document.getElementById('cfg-verifyMsg').value.trim(),
+      });
+      toast('Verification config saved ✅');
+    }
+
+    async function saveBadwords() {
+      const words = document.getElementById('cfg-badwords').value.split('\n').map(w=>w.trim().toLowerCase()).filter(Boolean);
+      await api('PATCH', '/settings', { badwords: words });
+      if (words.length) { await api('PATCH', '/modules', { badwordFilter: true }); }
+      toast(`${words.length} words saved ✅`);
+    }
+
+    // ── LOGS ──────────────────────────────────────────────────────────────────
+    async function loadLogs() {
+      const list = document.getElementById('log-list');
+      list.innerHTML = '<div class="page-loader" style="min-height:120px;"><div class="spinner"></div></div>';
+      try {
+        const logs = await api('GET', '/logs');
+        if (!logs.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><h3>No logs yet</h3><p>Mod actions will appear here.</p></div>'; return; }
+        const colors = { BAN:'var(--red)', KICK:'var(--orange)', MUTE:'var(--yellow)', WARN:'var(--yellow)', QUARANTINE:'var(--red)', AUTO_BAN:'var(--red)', AUTO_QUARANTINE:'var(--orange)', TEMPBAN:'var(--red)' };
+        list.innerHTML = logs.map(l => {
+          const col = colors[l.action] || 'var(--text2)';
+          const ts  = Math.floor(new Date(l.ts).getTime() / 1000);
+          return `
+            <div class="log-item">
+              <div class="log-action"><span class="badge" style="background:rgba(0,0,0,0.3);color:${col};border-color:${col}33;">${l.action}</span></div>
+              <div class="log-detail">
+                <span>User: <strong><@${l.userId}></strong></span>
+                ${l.modId ? `<span style="margin-left:12px;">By: <strong><@${l.modId}></strong></span>` : ''}
+                ${l.reason ? `<div style="color:var(--text3);font-size:12px;margin-top:2px;">↳ ${l.reason}</div>` : ''}
+              </div>
+              <div class="log-time">${new Date(l.ts).toLocaleDateString()} ${new Date(l.ts).toLocaleTimeString()}</div>
+            </div>`;
+        }).join('');
+      } catch (err) {
+        list.innerHTML = '<div class="empty"><h3>Failed to load logs</h3></div>';
+      }
+    }
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

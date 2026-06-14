@@ -3,84 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - WebzHook Guard</title>
+  <title>Dashboard — WebzHook Guard</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="container">
-      <h1 class="logo">⚡ WebzHook Guard</h1>
-      <div class="nav-links">
-        <div class="user-badge">
-          <img id="user-avatar" class="user-avatar" alt="Profile">
-          <span id="username"></span>
-        </div>
-        <a href="/auth/logout" class="btn btn-secondary btn-sm">Logout</a>
+    <a href="/" class="navbar-logo">⚡ WebzHook Guard</a>
+    <div class="navbar-right">
+      <div class="user-chip">
+        <img id="nav-avatar" src="" alt="">
+        <span id="nav-username">Loading...</span>
       </div>
+      <a href="/auth/logout" class="btn btn-ghost btn-sm">Logout</a>
     </div>
   </nav>
 
-  <div class="container">
-    <section class="servers-section">
-      <div>
-        <h2 class="section-title">Your Servers</h2>
-        <p class="section-subtitle">Select a server to manage WebzHook Guard settings</p>
+  <div style="max-width:1200px;margin:0 auto;padding:48px 32px;">
+    <div class="dash-header">
+      <h1>Your Servers</h1>
+      <p>Select a server where you're an admin to manage WebzHook Guard</p>
+    </div>
+    <div id="servers-container" class="servers-grid">
+      <div class="page-loader" style="grid-column:1/-1">
+        <div class="spinner"></div>
+        <span>Loading servers...</span>
       </div>
-
-      <div id="servers-container" class="servers-grid">
-        <div style="text-align: center; color: #a0a0c0; padding: 60px 20px;">
-          <div class="spinner" style="margin: 0 auto 16px;"></div>
-          Loading your servers...
-        </div>
-      </div>
-    </section>
+    </div>
   </div>
 
-  <script>
-    async function loadDashboard() {
-      try {
-        const userRes = await fetch('/api/user');
-        if (!userRes.ok) return window.location.href = '/';
-        
-        const user = await userRes.json();
-        document.getElementById('username').textContent = user.username;
-        document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+  <div class="toast-container" id="toasts"></div>
 
-        const guildsRes = await fetch('/api/guilds');
+  <script>
+    function toast(msg, type='success') {
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.textContent = msg;
+      document.getElementById('toasts').appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+
+    async function load() {
+      try {
+        const [meRes, guildsRes] = await Promise.all([fetch('/api/me'), fetch('/api/guilds')]);
+        if (!meRes.ok) { window.location.href = '/'; return; }
+
+        const me     = await meRes.json();
         const guilds = await guildsRes.json();
 
+        document.getElementById('nav-username').textContent = me.globalName || me.username;
+        document.getElementById('nav-avatar').src = me.avatar
+          ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png`
+          : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
         const container = document.getElementById('servers-container');
-        
-        if (guilds.length === 0) {
+
+        if (!guilds.length) {
           container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #a0a0c0;">
-              <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-              <p style="margin-bottom: 16px;">No servers found where you have permission</p>
-              <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot&permissions=8" class="btn btn-primary">Invite Bot to Server</a>
-            </div>
-          `;
+            <div class="empty" style="grid-column:1/-1">
+              <div class="empty-icon">📭</div>
+              <h3>No servers found</h3>
+              <p>You need to be an admin or owner in a server, and the bot needs to be invited.</p>
+              <a href="https://discord.com/api/oauth2/authorize?scope=bot&permissions=8" class="btn btn-primary">Invite Bot to a Server</a>
+            </div>`;
           return;
         }
 
-        container.innerHTML = guilds.map(g => `
-          <div class="server-card">
-            <img src="https://cdn.discordapp.com/icons/${g.id}/${g.icon || '0'}.png?size=256" alt="${g.name}" class="server-icon" 
-              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><rect fill=%22%235865f2%22 width=%22120%22 height=%22120%22/><text x=%2260%25%22 y=%2260%25%22 fill=%22white%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22>${g.name[0]}</text></svg>'">
-            <h3 class="server-name">${g.name}</h3>
-            <p class="server-meta">${g.owner ? '👑 Owner' : '🔧 Admin'}</p>
-            <div class="server-buttons">
-              <a href="/guild/${g.id}" class="btn btn-primary btn-block">Manage</a>
-              <a href="https://discord.com/channels/${g.id}" class="btn btn-secondary btn-block" target="_blank">Open</a>
-            </div>
-          </div>
-        `).join('');
+        container.innerHTML = guilds.map(g => {
+          const icon  = g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=256` : `https://cdn.discordapp.com/embed/avatars/0.png`;
+          const isOn  = g.settings?.enabled && g.settings?.detectionEnabled;
+          const badge = g.owner ? '👑 Owner' : '🔧 Admin';
+          return `
+            <a href="/guild/${g.id}" class="server-card">
+              <div class="server-icon-wrap">
+                <img src="${icon}" class="server-icon" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'" alt="${g.name}">
+                <div class="server-status-dot ${isOn ? 'active' : 'inactive'}"></div>
+              </div>
+              <div class="server-name">${g.name}</div>
+              <div class="server-meta">${badge} &nbsp;•&nbsp; ${isOn ? '<span style="color:var(--green);">🟢 Protected</span>' : '<span style="color:var(--text3);">⚪ Inactive</span>'}</div>
+              <span class="btn btn-primary btn-sm" style="margin-top:4px;">Manage →</span>
+            </a>`;
+        }).join('');
+
       } catch (err) {
+        toast('Failed to load: ' + err.message, 'error');
         console.error(err);
-        window.location.href = '/';
       }
     }
 
-    window.addEventListener('load', loadDashboard);
+    load();
   </script>
 </body>
 </html>
