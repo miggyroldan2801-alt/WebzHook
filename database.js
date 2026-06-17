@@ -1,10 +1,10 @@
 const fs   = require('fs');
 const path = require('path');
 
-const DB_PATH    = path.join(__dirname, 'data');
-const GUILDS_F   = path.join(DB_PATH, 'guilds.json');
-const WARNS_F    = path.join(DB_PATH, 'warns.json');
-const LOGS_F     = path.join(DB_PATH, 'logs.json');
+const DB_PATH  = path.join(__dirname, 'data');
+const GUILDS_F = path.join(DB_PATH, 'guilds.json');
+const WARNS_F  = path.join(DB_PATH, 'warns.json');
+const LOGS_F   = path.join(DB_PATH, 'logs.json');
 
 function ensure() {
   if (!fs.existsSync(DB_PATH)) fs.mkdirSync(DB_PATH, { recursive: true });
@@ -13,66 +13,94 @@ function ensure() {
   if (!fs.existsSync(LOGS_F))   fs.writeFileSync(LOGS_F,   '{}');
 }
 
-const read  = f => { try { return JSON.parse(fs.readFileSync(f,'utf8')); } catch { return {}; } };
+const read  = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return {}; } };
 const write = (f, d) => fs.writeFileSync(f, JSON.stringify(d, null, 2));
 
 const DEFAULTS = {
-  enabled: false,
-  detectionEnabled: false,
-  logChannelId: null,
-  whitelist: [],
-  blacklist: [],
-  maxRolePosition: null,
-  forbiddenRoles: [],
-  setupDone: false,
-  prefix: '%',
+  enabled:            false,
+  detectionEnabled:   false,
+  logChannelId:       null,
+  alertChannelId:     null, // separate channel for threat alerts
+  whitelist:          [],
+  blacklist:          [],
+  maxRolePosition:    null,
+  forbiddenRoles:     [],
+  setupDone:          false,
+  prefix:             '%',
+
   // Verification
-  verifyChannelId: null,
-  verifiedRoleId: null,
-  verifyMode: 'button',
-  verifyMessage: 'Click the button below to verify yourself.',
+  verifyChannelId:  null,
+  verifiedRoleId:   null,
+  verifyMode:       'button',
+  verifyMessage:    'Click the button below to verify yourself.',
+
   // Custom content
   customCommands: [],
-  funCommands: [],
-  responses: {},
-  autoRoles: [],
+  funCommands:    [],
+  responses:      {},
+  autoRoles:      [],
+
   // Welcome / Leave
   welcomeChannelId: null,
-  welcomeMessage: 'Welcome {user} to **{server}**! You are member #{count}.',
-  leaveChannelId: null,
-  leaveMessage: '{user} has left the server.',
-  // Modules (all toggleable)
+  welcomeMessage:   'Welcome {user} to **{server}**! You are member #{count}.',
+  leaveChannelId:   null,
+  leaveMessage:     '{user} has left the server. We now have {count} members.',
+
+  // Compromised account action: 'warn' | 'mute' | 'quarantine' | 'kick' | 'ban'
+  compromisedAction: 'quarantine',
+
+  // Modules
   modules: {
-    antiSpam:       true,
-    antiRaid:       true,
-    antiMassPing:   true,
-    antiCaps:       true,
-    antiDuplicate:  true,
-    antiNuke:       true,
-    antiLogger:     false,
-    inviteFilter:   false,
-    welcomeSystem:  false,
-    leaveSystem:    false,
-    autoRole:       false,
-    verification:   false,
-    slowmodeAuto:   false,
-    linkFilter:     false,
-    badwordFilter:  false,
+    antiSpam:              true,
+    antiRaid:              true,
+    antiMassPing:          true,
+    antiCaps:              true,
+    antiDuplicate:         true,
+    antiNuke:              true,
+    antiLogger:            false,
+    inviteFilter:          false,
+    linkFilter:            false,
+    badwordFilter:         false,
+    welcomeSystem:         false,
+    leaveSystem:           false,
+    autoRole:              false,
+    verification:          false,
+    slowmodeAuto:          false,
+    // NEW — Threat Intelligence modules
+    compromisedAccounts:   true,   // Detect hacked/scam accounts
+    imageSpamFilter:       true,   // Detect image/JPG spam campaigns
+    scamDetection:         true,   // Detect phishing links & scam keywords
+    dmSpamWatch:           true,   // Watch for mass-DM behaviour signals
+    newAccountFilter:      false,  // Auto-quarantine very new accounts on join
+    accountAgeGate:        false,  // Require minimum account age to speak
+    vpnDetection:          false,  // Flag users with suspicious join patterns
+    smartThreatResponse:   true,   // Auto-escalate punishment based on threat score
   },
-  // Configurable thresholds
+
+  // Thresholds
   thresholds: {
-    spamMessages:     5,
-    spamSeconds:      4,
-    raidJoins:       10,
-    raidSeconds:     10,
-    massPingMentions: 5,
-    capsPercent:     80,
-    duplicateCount:   4,
-    nukeActions:      3,
-    muteDuration:    30,
+    spamMessages:        5,
+    spamSeconds:         4,
+    raidJoins:          10,
+    raidSeconds:        10,
+    massPingMentions:    5,
+    capsPercent:        80,
+    duplicateCount:      4,
+    nukeActions:         3,
+    muteDuration:       30,
+    // Threat intelligence thresholds
+    threatScoreWarn:         30,
+    threatScoreMute:         55,
+    threatScoreQuarantine:   75,
+    threatScoreBan:         100,
+    minAccountAgeDays:        7,   // for accountAgeGate
+    imageSpamBurst:           5,   // images in 30s to flag
+    imageSpamExtreme:        10,   // images in 60s to ban
   },
-  badwords: [],
+
+  badwords:            [],
   slowmodeAutoSeconds: 5,
+  trustedRoles:        [], // roles exempt from threat detection
 };
 
 function getGuild(id) {
@@ -80,12 +108,20 @@ function getGuild(id) {
   const all = read(GUILDS_F);
   if (!all[id]) all[id] = JSON.parse(JSON.stringify(DEFAULTS));
   const g = all[id];
-  // Deep-merge missing keys
+  // Deep-merge top-level
   for (const k of Object.keys(DEFAULTS)) {
     if (g[k] === undefined) g[k] = JSON.parse(JSON.stringify(DEFAULTS[k]));
   }
-  for (const k of Object.keys(DEFAULTS.modules))     { if (g.modules[k]    === undefined) g.modules[k]     = DEFAULTS.modules[k];     }
-  for (const k of Object.keys(DEFAULTS.thresholds))  { if (g.thresholds[k] === undefined) g.thresholds[k]  = DEFAULTS.thresholds[k];  }
+  // Deep-merge modules
+  if (!g.modules) g.modules = {};
+  for (const k of Object.keys(DEFAULTS.modules)) {
+    if (g.modules[k] === undefined) g.modules[k] = DEFAULTS.modules[k];
+  }
+  // Deep-merge thresholds
+  if (!g.thresholds) g.thresholds = {};
+  for (const k of Object.keys(DEFAULTS.thresholds)) {
+    if (g.thresholds[k] === undefined) g.thresholds[k] = DEFAULTS.thresholds[k];
+  }
   write(GUILDS_F, all);
   return g;
 }
@@ -105,8 +141,8 @@ function updateGuild(id, patch) {
 }
 
 // Warnings
-function getWarns(gid, uid)                { ensure(); return read(WARNS_F)[gid]?.[uid] || []; }
-function addWarn(gid, uid, reason, modId)  {
+function getWarns(gid, uid)               { ensure(); return read(WARNS_F)[gid]?.[uid] || []; }
+function addWarn(gid, uid, reason, modId) {
   ensure();
   const all = read(WARNS_F);
   if (!all[gid]) all[gid] = {};
@@ -122,13 +158,13 @@ function clearWarns(gid, uid) {
   write(WARNS_F, all);
 }
 
-// Mod action logs
+// Action logs
 function addLog(gid, entry) {
   ensure();
   const all = read(LOGS_F);
   if (!all[gid]) all[gid] = [];
   all[gid].unshift({ ...entry, ts: new Date().toISOString() });
-  if (all[gid].length > 200) all[gid] = all[gid].slice(0, 200);
+  if (all[gid].length > 500) all[gid] = all[gid].slice(0, 500);
   write(LOGS_F, all);
 }
 function getLogs(gid, limit = 50) {
